@@ -8,7 +8,7 @@ a = Analysis(
     ['main.py'],
     pathex=['.\\venv\\'],
     binaries=[],
-    datas=[],
+    datas=[('Assets', 'Assets')],
     hiddenimports=['PIL', 'Pillow'],
     hookspath=[],
     hooksconfig={},

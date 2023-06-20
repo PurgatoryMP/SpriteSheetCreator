@@ -1,23 +1,17 @@
-#Requirements:
+### Description:
+This tool is for creating sprite sheets from image sequences.
+
+### Requirements:
 -Python 3.7 or higher.
 -Pillow
 -QT5
 
-#Description:
+### Build Notes:
 
-This tool creates a sprite sheet using a sequence of images.
+1. First you must run \SpriteSheetCreator\sprite_sheet_creator\venv\Scripts\activate.bat
+2. In project explorer right click the main.py file and choose open in terminal.
+3. Because pycharm uses a virtual environment you will need to include hidden imports for Pillow. Using Pyinstaller to build the .exe use the following command.
 
-#Notes:
-
-In project explorer right click the main.py file and choose open in terminal.
-
-First you must run \SpriteSheetCreator\sprite_sheet_creator\venv\Scripts\activate.bat
-
-Using Pyinstaller to build the .exe use the following command.
-
-Because pycharm uses a virtual environment you will need to include these hidden imports.
-
-pyinstaller --onefile --paths=.\venv\ --hidden-import=PIL --hidden-import=Pillow --windowed -w "main.py"
-
+`pyinstaller --onefile --paths=.\venv\ --windowed --hidden-import=PIL --hidden-import=Pillow --add-data "Assets;Assets" main.py
+`
 This will generate a main.exe file in the dist directory.
-
