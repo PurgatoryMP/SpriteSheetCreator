@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod~]
+
+# Distribution / packaging
+#_rez_build/
+
+# Backups
+*.backup
+*.bak
+*~
+
+# IDEs
+.idea/
+.vscode/
+venv/
+
+# Windows junk
+*Thumbs.db
+*.db
