@@ -1,19 +1,11 @@
 import os
+import tempfile
 
 from PIL import Image
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtGui import QPixmap, QImage, QColor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QFileDialog, QLabel, QMenuBar, QAction, \
     QDockWidget, QLineEdit, QVBoxLayout, QScrollArea
-
-# Get assets
-current_directory = os.getcwd()
-transparent_background = os.path.join(current_directory, 'assets', 'transparent_background.png').replace("\\", "/")
-
-assets = {
-    'checker_background': transparent_background,
-    # Add more image assets as needed
-}
 
 
 class MainWindow(QMainWindow):
@@ -55,10 +47,8 @@ class MainWindow(QMainWindow):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-        if assets["checker_background"]:
-            checker_background = f'background-image: url({assets["checker_background"]}); border: 1px solid black;'
-        else:
-            checker_background = "background-color: darkgrey; border: 1px solid black;"
+        checker_image = self.create_checker_pattern(512, 512, 8)
+        widget_background = f'background-image: url("{checker_image}"); border: 1px solid black;'
 
         # Set up the image dock widget
         self.image_dock_widget = QDockWidget("Image Grid", self)
@@ -67,7 +57,7 @@ class MainWindow(QMainWindow):
 
         # Set up the playback dock widget
         self.playback_dock_widget = QDockWidget("Playback", self)
-        self.playback_dock_widget.setStyleSheet(checker_background)
+        self.playback_dock_widget.setStyleSheet(widget_background)
         self.layout.addWidget(self.playback_dock_widget, 1, 2, 9, 2)  # Adjust the row and column spans as needed
 
         # Set up the controls dock widget
@@ -78,7 +68,7 @@ class MainWindow(QMainWindow):
         # TODO: Add zoom function to this widget.
         # Set up the sprite sheet dock widget
         self.sprite_sheet_dock_widget = QDockWidget("Sprite Sheet", self)
-        self.sprite_sheet_dock_widget.setStyleSheet(checker_background)
+        self.sprite_sheet_dock_widget.setStyleSheet(widget_background)
         self.layout.addWidget(self.sprite_sheet_dock_widget, 1, 6, 9, 2)  # Adjust the row and column spans as needed
 
         # Set up the sprite sheet scroll area
@@ -157,6 +147,41 @@ class MainWindow(QMainWindow):
         self.fps_input.returnPressed.connect(self.update_fps)
         self.image_width_input.returnPressed.connect(self.update_image_size)
         self.image_height_input.returnPressed.connect(self.update_image_size)
+
+    def create_checker_pattern(self, width: int, height: int, square_size: int) -> str:
+        """
+        Create a checker pattern image.
+
+        Args:
+            width (int): The width of the image.
+            height (int): The height of the image.
+            square_size (int): The size of each square in pixels.
+
+        Returns:
+            str: The file path of the generated checker pattern image.
+        """
+        try:
+            image = QImage(width, height, QImage.Format_RGBA8888)
+            color1 = QColor(50, 50, 50, 255)  # Dark grey color
+            color2 = QColor(50, 50, 50, 0)  # Transparent color
+
+            for y in range(height):
+                for x in range(width):
+                    if (x // square_size) % 2 == (y // square_size) % 2:
+                        image.setPixelColor(x, y, color1)
+                    else:
+                        image.setPixelColor(x, y, color2)
+
+            # Save the image to a temporary file
+            temp_file_path = tempfile.mktemp(suffix='.png')
+            image.save(temp_file_path)
+
+            # convert the path
+            image_path = temp_file_path.replace("\\", "/")
+
+            return image_path
+        except Exception as err:
+            self.debug(str(err.args))
 
 
     def import_images(self) -> None:
@@ -238,9 +263,6 @@ class MainWindow(QMainWindow):
                 self.current_frame = 0
                 self.playback_timer.start(self.playback_interval)
                 self.update_playback_label()
-
-                # # Update the sprite sheet
-                # self.update_sprite_sheet()
 
                 # Update the sprite sheet widget with the first image
                 self.update_sprite_sheet()
