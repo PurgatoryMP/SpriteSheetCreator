@@ -167,13 +167,39 @@ class MainWindow(QMainWindow):
         self.file_menu.addAction(self.import_action)
 
         # Set up the save action
-        self.save_action = QAction("Save Image As", self)
+        self.save_action = QAction("Export Sprite Sheet", self)
         self.save_action.triggered.connect(self.save_image_as)
         self.file_menu.addAction(self.save_action)
 
+        # TODO: Add an a menu bar option to import a .gif
+        # Set up the import action
+        self.import_gif = QAction("Import .Gif", self)
+        self.import_gif.triggered.connect(self.import_as_gif)
+        self.file_menu.addAction(self.import_gif)
+
         # TODO: Add an a menu bar option to save as .gif
+        # Set up the export action
+        self.export_gif = QAction("Export .Gif", self)
+        self.export_gif.triggered.connect(self.export_as_gif)
+        self.file_menu.addAction(self.import_gif)
+
         # TODO: Add an a menu bar option to save as .MP4
+        # Set up the import action
+        self.import_mp4 = QAction("Import .MP4", self)
+        self.import_mp4.triggered.connect(self.import_as_mp4)
+        self.file_menu.addAction(self.import_mp4)
+
         # TODO: Add an a menu bar option to convert a video to an image sequence.
+        # Set up the action
+        self.convert_gif = QAction("Convert .Gif to Sequence", self)
+        self.convert_gif.triggered.connect(self.convert_gif_to_Sequence)
+        self.file_menu.addAction(self.convert_gif)
+
+        # TODO: Add an a menu bar option to convert a video to an image sequence.
+        # Set up the action
+        self.convert_mp4 = QAction("Convert .MP4 to Sequence", self)
+        self.convert_mp4.triggered.connect(self.convert_mp4_to_Sequence)
+        self.file_menu.addAction(self.convert_mp4)
 
         # Set up the playback timer
 
@@ -301,7 +327,7 @@ class MainWindow(QMainWindow):
             }
         """
 
-        # TODO: Add functinality to the grid inputs to define the number or rows and columns in the sprite sheet.
+        # TODO: Add functionality to the grid inputs to define the number or rows and columns in the sprite sheet.
 
         # Set up the image grid controls
         self.grid_rows_label = QLabel("Grid Rows:")
@@ -375,10 +401,43 @@ class MainWindow(QMainWindow):
         print("grid_columns_input: {}".format(value))
 
     def stop_timer(self):
+        """Stops the QT QTimer Method pausing the sequence playback."""
         self.playback_timer.stop()
 
     def start_timer(self):
+        """Starts the QT QTimer Method Playing the image sequence."""
         self.playback_timer.start()
+
+    def import_as_gif(self) -> None:
+        """
+        Imports a gif file and converts it to an image sequence.
+        """
+        print("import_as_gif")
+
+    def export_as_gif(self) -> None:
+        """
+        exports a gif file which is the image sequence.
+        """
+        print("export_as_gif")
+
+    def import_as_mp4(self) -> None:
+        """
+        Imports a .MP4 file and converts it to an image sequence.
+        This MP4 may contain audio information. Maybe this can be re-used?
+        """
+        print("import_as_mp4")
+
+    def convert_gif_to_Sequence(self) -> None:
+        """
+        imports a gif file and then converts it to an image sequence saving it out to a user defined directory.
+        """
+        print("convert_gif_to_Sequence")
+
+    def convert_mp4_to_Sequence(self) -> None:
+        """
+        imports a .MP4 file and then converts it to an image sequence saving it out to a user defined directory.
+        """
+        print("convert_mp4_to_Sequence")
 
     def create_checker_pattern(self, width: int, height: int, square_size: int) -> str:
         """
