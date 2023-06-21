@@ -1,21 +1,50 @@
+"""
+Image Grid Application
+
+This script provides a PyQt5-based application for importing and displaying a sequence of images in a grid layout.
+The main window consists of several dock widgets and controls for managing the image sequence and playback.
+
+Dependencies:
+    - os
+    - tempfile
+    - PIL (Python Imaging Library)
+    - PyQt5
+
+Classes:
+    - MainWindow: Represents the main window for the Image Grid application.
+
+Methods:
+    - __init__(): Initializes the ImageGridApp and sets up the main window, dock widgets, menu, and controls.
+    - create_checker_pattern(width, height, square_size): Create a checker pattern image.
+    - import_images(): Imports and displays images from a selected directory.
+    - next_frame(): Moves to the next frame in the playback sequence.
+    - update_playback_label(): Updates the playback label with the current frame from the image sequence.
+    - update_start_frame(): Updates the start frame based on user input in the control widget.
+    - update_end_frame(): Updates the end frame based on user input in the control widget.
+    - update_fps(): Updates the frames per second (FPS) for the playback timer.
+    - update_image_grid(): Updates the image grid with a sequence of visible images.
+    - update_sprite_sheet(): Updates the sprite sheet based on the specified image sequence.
+"""
+
 import os
 import tempfile
 
+from pathlib import Path
 from PIL import Image
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap, QImage, QColor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QFileDialog, QLabel, QMenuBar, QAction, \
-    QDockWidget, QLineEdit, QVBoxLayout, QScrollArea
+    QDockWidget, QLineEdit, QVBoxLayout, QScrollArea, QPushButton, QHBoxLayout, QSpinBox
+
+from threading import Thread
 
 
 class MainWindow(QMainWindow):
     """
     This class represents a main window for the Image Grid application.
 
-    The Image Grid application allows the user to import and display a sequence of images. The main window consists of several dock widgets and controls for managing the image sequence and playback.
-
-    Attributes:
-        assets (dict): A dictionary containing image assets used by the application.
+    The Image Grid application allows the user to import and display a sequence of images.
+    The main window consists of several dock widgets and controls for managing the image sequence and playback.
 
     Methods:
         __init__(): Initializes the ImageGridApp and sets up the main window, dock widgets, menu, and controls.
@@ -35,8 +64,13 @@ class MainWindow(QMainWindow):
         Sets up the main window, dock widgets, menu, and controls.
         """
         super().__init__()
+
+        checker_image = self.create_checker_pattern(16, 16, 8)
+        widget_background = f'background-image: url("{checker_image}"); border: 1px solid black;'
+
         self.setWindowTitle("Sprite Sheet Creator")
-        self.setStyleSheet("background-color: white;")
+        self.setStyleSheet("background-color: White;")
+        self.resize(1024, 512)
 
         # Set up central widget
         self.central_widget = QWidget()
@@ -47,28 +81,35 @@ class MainWindow(QMainWindow):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
 
-        checker_image = self.create_checker_pattern(512, 512, 8)
-        widget_background = f'background-image: url("{checker_image}"); border: 1px solid black;'
-
         # Set up the image dock widget
         self.image_dock_widget = QDockWidget("Image Grid", self)
         self.image_dock_widget.setStyleSheet("background-color: white; border: 1px solid black;")
+        self.image_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.image_dock_widget.setFeatures(QDockWidget.AllDockWidgetFeatures)
         self.layout.addWidget(self.image_dock_widget, 1, 0, 9, 2)  # Adjust the row and column spans as needed
+
+        # self.playback_display_bar = QMenuBar(self)
 
         # Set up the playback dock widget
         self.playback_dock_widget = QDockWidget("Playback", self)
         self.playback_dock_widget.setStyleSheet(widget_background)
+        self.playback_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.playback_dock_widget.setFeatures(QDockWidget.AllDockWidgetFeatures)
         self.layout.addWidget(self.playback_dock_widget, 1, 2, 9, 2)  # Adjust the row and column spans as needed
 
         # Set up the controls dock widget
         self.controls_dock_widget = QDockWidget("Controls", self)
         self.controls_dock_widget.setStyleSheet("background-color: white; border: 1px solid black;")
+        self.controls_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.controls_dock_widget.setFeatures(QDockWidget.AllDockWidgetFeatures)
         self.layout.addWidget(self.controls_dock_widget, 1, 4, 9, 2)  # Adjust the row and column spans as needed
 
         # TODO: Add zoom function to this widget.
         # Set up the sprite sheet dock widget
         self.sprite_sheet_dock_widget = QDockWidget("Sprite Sheet", self)
         self.sprite_sheet_dock_widget.setStyleSheet(widget_background)
+        self.sprite_sheet_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.sprite_sheet_dock_widget.setFeatures(QDockWidget.AllDockWidgetFeatures)
         self.layout.addWidget(self.sprite_sheet_dock_widget, 1, 6, 9, 2)  # Adjust the row and column spans as needed
 
         # Set up the sprite sheet scroll area
@@ -82,6 +123,40 @@ class MainWindow(QMainWindow):
         # Set up the menu bar
         self.menu_bar = QMenuBar(self)
         self.setMenuBar(self.menu_bar)
+
+        # Set up the style sheet for the menu bar
+        menu_bar_style = """
+            QMenuBar {
+                background-color: white;
+            }
+
+            QMenuBar::item:selected {
+                background-color: lightGrey;
+                color: black;
+            }
+
+            QMenuBar::item:pressed {
+                background-color: DarkGrey;
+                color: black;
+            }
+            
+            QMenu {
+                background-color: white;
+            }
+            
+            QMenu::item:selected {
+                background-color: lightGrey;
+                color: black;
+            }
+
+            QMenu::item:pressed {
+                background-color: LightGreen;
+                color: black;
+            }
+            
+        """
+
+        self.menu_bar.setStyleSheet(menu_bar_style)
 
         # Set up the file menu
         self.file_menu = self.menu_bar.addMenu("File")
@@ -101,6 +176,7 @@ class MainWindow(QMainWindow):
         # TODO: Add an a menu bar option to convert a video to an image sequence.
 
         # Set up the playback timer
+
         self.playback_timer = QTimer(self)
         self.playback_timer.timeout.connect(self.next_frame)
         self.playback_interval = 1000 // 24  # 24 frames per second
@@ -112,41 +188,197 @@ class MainWindow(QMainWindow):
         self.controls_layout = QVBoxLayout(self.controls_widget)
         self.controls_dock_widget.setWidget(self.controls_widget)
 
+        play_button_style = """
+            QPushButton {
+                background-color: LightGreen;
+                font-size: 26px;
+                border-radius: 8px;  
+                width: 150px;
+                height: 100px;
+            }
+
+            QPushButton:hover {
+                background-color: Green;
+                color: black;
+            }
+
+            QPushButton:pressed {
+                background-color: DarkGreen;
+                color: black;
+            }
+        """
+        stop_button_style = """
+            QPushButton {
+                border: 1px solid Black;
+                font-size: 26px;
+                border-radius: 8px;          
+                width: 150px;
+                height: 100px;
+            }
+
+            QPushButton:hover {
+                background-color: Red;
+                color: black;
+            }
+
+            QPushButton:pressed {
+                background-color: DarkRed;
+                color: black;
+            }
+        """
+        label_style = """
+                    QLabel {
+                        background-color: White;
+                        color: Black;
+                        font-size: 16px;
+                        border: 1px solid Black;
+                        border-radius: 8px;
+                        padding: 6px;
+                    }
+                    QLineEdit {
+                        background-color: White;
+                        color: Black;
+                        font-size: 16px;
+                        border: 1px solid Black;
+                        border-radius: 8px;
+                        padding: 6px;
+                    }
+                """
+
+        # Set up the play button controls
+        self.play_button = QPushButton("Play")
+        self.play_button.setStyleSheet(play_button_style)
+
+        # Set up the stop button controls
+        self.stop_button = QPushButton("Stop")
+        self.stop_button.setStyleSheet(stop_button_style)
+
+        #TODO: Convert these controls to QSpinBox, Currently doing so seems to break the sprite sheet and playback.
+
         # Set up the start frame controls
         self.start_frame_label = QLabel("Start Frame:")
+        self.start_frame_label.setStyleSheet(label_style)
         self.start_frame_input = QLineEdit()
-        self.controls_layout.addWidget(self.start_frame_label)
-        self.controls_layout.addWidget(self.start_frame_input)
+        self.start_frame_input.setStyleSheet(label_style)
 
         # Set up the end frame controls
         self.end_frame_label = QLabel("End Frame:")
+        self.end_frame_label.setStyleSheet(label_style)
         self.end_frame_input = QLineEdit()
-        self.controls_layout.addWidget(self.end_frame_label)
-        self.controls_layout.addWidget(self.end_frame_input)
+        self.end_frame_input.setStyleSheet(label_style)
 
         # Set up the FPS controls
         self.fps_label = QLabel("Playback FPS:")
+        self.fps_label.setStyleSheet(label_style)
         self.fps_input = QLineEdit()
-        self.controls_layout.addWidget(self.fps_label)
-        self.controls_layout.addWidget(self.fps_input)
+        self.fps_input.setStyleSheet(label_style)
+
+        QSpinBox_style = """
+            QSpinBox {
+                background-color: White;
+                color: Black;
+                font-size: 16px;
+                border: 1px solid Black;
+                border-radius: 8px;
+                padding: 6px;
+            }
+        
+            QSpinBox::up-button, QSpinBox::down-button {
+                width: 30px;
+            }
+            
+            QSpinBox::up-button {
+                subcontrol-border: 1px solid Black;
+                subcontrol-origin: border;
+                subcontrol-position: top right;
+                text: "+";
+            }
+            
+            QSpinBox::down-button {
+                subcontrol-border: 1px solid Black;
+                subcontrol-origin: border;
+                subcontrol-position: bottom right;
+            }
+        """
+
+        # TODO: Add functinality to the grid inputs to define the number or rows and columns in the sprite sheet.
+
+        # Set up the image grid controls
+        self.grid_rows_label = QLabel("Grid Rows:")
+        self.grid_rows_label.setStyleSheet(label_style)
+        self.grid_rows_input = QSpinBox()
+        self.grid_rows_input.setStyleSheet(QSpinBox_style)
+        self.grid_rows_input.setValue(8)
+
+        self.grid_columns_label = QLabel("Grid Columns:")
+        self.grid_columns_label.setStyleSheet(label_style)
+        self.grid_columns_input = QSpinBox()
+        self.grid_columns_input.setStyleSheet(QSpinBox_style)
+        self.grid_columns_input.setValue(8)
 
         # Set up the image size controls
         self.image_width_label = QLabel("Image Width:")
+        self.image_width_label.setStyleSheet(label_style)
         self.image_width_input = QLineEdit()
-        self.controls_layout.addWidget(self.image_width_label)
-        self.controls_layout.addWidget(self.image_width_input)
-
+        self.image_width_input.setStyleSheet(label_style)
         self.image_height_label = QLabel("Image Height:")
+        self.image_height_label.setStyleSheet(label_style)
         self.image_height_input = QLineEdit()
-        self.controls_layout.addWidget(self.image_height_label)
-        self.controls_layout.addWidget(self.image_height_input)
+        self.image_height_input.setStyleSheet(label_style)
+
+        # Create horizontal layouts for labels and inputs
+        label_input_layouts = []
+        for label, input_ in [
+            (self.play_button, self.stop_button),
+            (self.start_frame_label, self.start_frame_input),
+            (self.end_frame_label, self.end_frame_input),
+            (self.fps_label, self.fps_input),
+            (self.grid_rows_label, self.grid_rows_input),
+            (self.grid_columns_label, self.grid_columns_input),
+            (self.image_width_label, self.image_width_input),
+            (self.image_height_label, self.image_height_input)
+        ]:
+            layout = QHBoxLayout()
+            layout.addWidget(label)
+            layout.addWidget(input_)
+            label_input_layouts.append(layout)
+
+        for layout in label_input_layouts:
+            self.controls_layout.addLayout(layout)
 
         # Connect the input fields to update functions
+        self.play_button.clicked.connect(self.start_timer)
+        self.stop_button.clicked.connect(self.stop_timer)
+
         self.start_frame_input.returnPressed.connect(self.update_start_frame)
         self.end_frame_input.returnPressed.connect(self.update_end_frame)
+
         self.fps_input.returnPressed.connect(self.update_fps)
+
+        self.grid_rows_input.valueChanged.connect(self.update_grid_rows)
+        self.grid_columns_input.valueChanged.connect(self.update_grid_columns)
+
         self.image_width_input.returnPressed.connect(self.update_image_size)
         self.image_height_input.returnPressed.connect(self.update_image_size)
+
+        
+    def update_grid_rows(self):
+        value = self.grid_rows_input.value()
+        if value <= 0:
+            value = 0
+        print("grid_rows_input: {}".format(value))
+        
+    def update_grid_columns(self):        
+        value = self.grid_columns_input.value()
+        if value <= 0:
+            value = 0
+        print("grid_columns_input: {}".format(value))
+
+    def stop_timer(self):
+        self.playback_timer.stop()
+
+    def start_timer(self):
+        self.playback_timer.start()
 
     def create_checker_pattern(self, width: int, height: int, square_size: int) -> str:
         """
@@ -183,7 +415,6 @@ class MainWindow(QMainWindow):
         except Exception as err:
             self.debug(str(err.args))
 
-
     def import_images(self) -> None:
         """
         Imports and displays images from a selected directory.
@@ -201,11 +432,15 @@ class MainWindow(QMainWindow):
             None
         """
         try:
+            # TODO: Move this image importer into its own module.
+
             # Open file dialog to select directory
             directory = QFileDialog.getExistingDirectory(self, "Select Directory")
             if directory:
                 # Retrieve image files from the selected directory
-                image_files = [file for file in os.listdir(directory) if file.endswith(".png") or file.endswith(".jpg")]
+                # image_files = [file for file in os.listdir(directory) if file.endswith(".png") or file.endswith(".jpg")]
+                image_files = list(Path(directory).glob("*.png")) + list(Path(directory).glob("*.jpg"))
+
                 self.image_sequence = [os.path.join(directory, file) for file in image_files]
 
                 num_images = len(self.image_sequence)
@@ -288,18 +523,25 @@ class MainWindow(QMainWindow):
         """
         try:
             # Increment the current frame by 1
-            self.current_frame += 1
+            start_frame_text = self.start_frame_input.text()
+            end_frame_text = self.end_frame_input.text()
 
-            # Check if the current frame exceeds the end frame
-            if self.current_frame > int(self.end_frame_input.text()):
-                # Reset the current frame to the start frame
-                self.current_frame = int(self.start_frame_input.text())
+            if start_frame_text and end_frame_text:
+                start_frame = int(start_frame_text)
+                end_frame = int(end_frame_text)
+
+                # print(start_frame, end_frame)
+
+                self.current_frame += 1
+                if self.current_frame > end_frame:
+                    # Reset the current frame to the start frame
+                    self.current_frame = start_frame
 
             # Update the playback label to reflect the new frame
             self.update_playback_label()
 
         except Exception as err:
-            self.debug(str(err.args))
+            self.debug("Next Frame error. {}".format(err.args))
 
     def update_playback_label(self) -> None:
         """
@@ -443,32 +685,37 @@ class MainWindow(QMainWindow):
             if self.image_sequence:
                 start_frame = int(self.start_frame_input.text())
                 end_frame = int(self.end_frame_input.text())
-                visible_images = self.image_sequence[start_frame:end_frame + 1]
 
-                num_images = len(visible_images)
-                grid_size = int(num_images ** 0.5)
+                if start_frame and end_frame:
+                    visible_images = self.image_sequence[start_frame:end_frame + 1]
 
-                # Adjust grid size to ensure an even number of rows and columns
-                if grid_size % 2 != 0:
-                    grid_size += 1
+                    num_images = len(visible_images)
+                    grid_size = int(num_images ** 0.5)
+                    print("grid_size: {}".format(grid_size))
 
-                # Create the widget and layout for the image dock
-                image_dock_content = QWidget(self.image_dock_widget)
-                image_dock_layout = QGridLayout(image_dock_content)
-                image_dock_layout.setSpacing(0)
-                image_dock_layout.setContentsMargins(0, 0, 0, 0)
+                    # Adjust grid size to ensure an even number of rows and columns
+                    if grid_size % 2 != 0:
+                        grid_size += 1
 
-                # Add each visible image to the grid
-                for i, image_path in enumerate(visible_images):
-                    pixmap = QPixmap(image_path)
-                    pixmap = pixmap.scaledToHeight(100, Qt.SmoothTransformation)  # Adjust the image size as needed
-                    image_label = QLabel()
-                    image_label.setPixmap(pixmap)
-                    image_dock_layout.addWidget(image_label, i // grid_size, i % grid_size)
+                    print("grid_size Adjust: {}".format(grid_size))
 
-                # Set the layout for the image dock
-                image_dock_content.setLayout(image_dock_layout)
-                self.image_dock_widget.setWidget(image_dock_content)
+                    # Create the widget and layout for the image dock
+                    image_dock_content = QWidget(self.image_dock_widget)
+                    image_dock_layout = QGridLayout(image_dock_content)
+                    image_dock_layout.setSpacing(0)
+                    image_dock_layout.setContentsMargins(0, 0, 0, 0)
+
+                    # Add each visible image to the grid
+                    for i, image_path in enumerate(visible_images):
+                        pixmap = QPixmap(image_path)
+                        pixmap = pixmap.scaledToHeight(100, Qt.SmoothTransformation)  # Adjust the image size as needed
+                        image_label = QLabel()
+                        image_label.setPixmap(pixmap)
+                        image_dock_layout.addWidget(image_label, i // grid_size, i % grid_size)
+
+                    # Set the layout for the image dock
+                    image_dock_content.setLayout(image_dock_layout)
+                    self.image_dock_widget.setWidget(image_dock_content)
 
         except Exception as err:
             self.debug(str(err.args))
@@ -493,14 +740,24 @@ class MainWindow(QMainWindow):
                 sprite_sheet_width = int(self.image_width_input.text())
                 sprite_sheet_height = int(self.image_height_input.text())
 
+                # grid_rows = self.grid_rows_input.value()
+                # grid_columns = self.grid_columns_input.value()
+
                 # Calculate the grid size based on the frame range
-                grid_size = int(len(self.image_sequence) ** 0.5)
+                grid_size = int(len(self.image_sequence[start_frame:end_frame + 1]) ** 0.5)
+
+                print("init_grid_size: {}".format(grid_size))
+
                 if grid_size % 2 != 0:
                     grid_size += 1
+
+                print("grid_size: {}".format(grid_size))
 
                 # Calculate the dimensions of each image in the grid
                 image_width = sprite_sheet_width // grid_size
                 image_height = sprite_sheet_height // grid_size
+
+                print("image_width: {} image_height:{}".format(image_width, image_height))
 
                 # Create a new sprite sheet image
                 sprite_sheet_image = Image.new('RGBA', (sprite_sheet_width, sprite_sheet_height), (0, 0, 0, 0))
@@ -519,21 +776,28 @@ class MainWindow(QMainWindow):
                     x = col * image_width
                     y = row * image_height
 
+                    # print("row: {} col:{}".format(row, col))
+                    # print("pos_x: {} pos_y:{}".format(x, y))
+
                     # Paste the image onto the sprite sheet
                     sprite_sheet_image.paste(image, (x, y))
 
                 # Scale the sprite sheet to a specific height while maintaining aspect ratio
                 scale_factor = sprite_sheet_width / sprite_sheet_image.height
-                scaled_sprite_sheet = sprite_sheet_image.resize((int(sprite_sheet_image.width * scale_factor), sprite_sheet_height), resample=Image.LANCZOS)
+                scaled_sprite_sheet = sprite_sheet_image.resize(
+                    (int(sprite_sheet_image.width * scale_factor), sprite_sheet_height), resample=Image.LANCZOS)
 
                 # Convert the PIL Image to a QImage
-                qimage = QImage(scaled_sprite_sheet.tobytes(), scaled_sprite_sheet.size[0], scaled_sprite_sheet.size[1], QImage.Format_RGBA8888)
+                qimage = QImage(scaled_sprite_sheet.tobytes(), scaled_sprite_sheet.size[0], scaled_sprite_sheet.size[1],
+                                QImage.Format_RGBA8888)
 
                 # Convert the QImage to a QPixmap
                 sprite_sheet_pixmap = QPixmap.fromImage(qimage)
 
                 # Set the final sprite sheet as the image displayed in the sprite sheet widget
                 self.sprite_sheet_widget.setPixmap(sprite_sheet_pixmap)
+
+                # print("update_sprite_sheet: {}x{}".format(update_sprite_sheet, image_height_text))
 
         except Exception as err:
             self.debug(str(err.args))
@@ -568,6 +832,8 @@ class MainWindow(QMainWindow):
                 # Update the sprite sheet
                 self.update_sprite_sheet()
 
+                print("update_image_size: {}x{}".format(image_width_text, image_height_text))
+
         except ValueError:
             # Handle the case where the image width or height value is not a valid integer
             print("Invalid image width or height value. Please enter a valid integer.")
@@ -587,7 +853,7 @@ class MainWindow(QMainWindow):
                 sprite_sheet_image = QImage(self.sprite_sheet_widget.pixmap().toImage())
 
                 # Calculate the number of rows and columns in the sprite sheet
-                num_rows = int(len(self.image_sequence) ** 0.5)
+                num_rows = int(len(self.image_sequence[int(self.start_frame_input.text()):int(self.end_frame_input.text()) + 1]) ** 0.5)
                 num_columns = num_rows
 
                 # Calculate the frame range and frames per second (fps)
@@ -595,7 +861,7 @@ class MainWindow(QMainWindow):
                 fps = int(self.fps_input.text())
 
                 # Generate the filename based on the parameters
-                filename = f"SheetName_{num_rows}_{num_columns}_{frame_range}_{fps}.png"
+                filename = f"SheetName_000_{num_rows}_{num_columns}_{frame_range}_{fps}.png"
 
                 # Open a file dialog to get the save file path
                 file_path, _ = QFileDialog.getSaveFileName(self, "Save Image As", filename, filter="PNG Image (*.png)")
@@ -607,7 +873,8 @@ class MainWindow(QMainWindow):
             # Handle any exceptions and print the error message
             self.debug(str(err.args))
 
-    def debug(self, message) -> None:
+    @staticmethod
+    def debug(message) -> None:
         """
         Displays the error message in the console.
         Args:
@@ -621,7 +888,10 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QApplication([])
-    window = MainWindow()
-    window.show()
-    app.exec()
+    try:
+        app = QApplication([])
+        window = MainWindow()
+        window.show()
+        app.exec()
+    except Exception as err:
+        print(err.args)
