@@ -118,7 +118,13 @@ class MainWindow(QMainWindow):
         self.sprite_sheet_scroll_area.setWidget(self.sprite_sheet_widget)
         self.sprite_sheet_scroll_area.setWidgetResizable(True)
         self.sprite_sheet_dock_widget.setWidget(self.sprite_sheet_scroll_area)
-        # self.sprite_sheet_widget = self.sprite_sheet_scroll_area.widget()
+
+        # Set up the image grid scroll area
+        # self.image_grid_scroll_area = QScrollArea()
+        # self.image_grid_widget = QLabel()
+        # self.image_grid_scroll_area.setWidget(self.image_grid_widget)
+        # self.image_grid_scroll_area.setWidgetResizable(True)
+        # self.image_dock_widget.setWidget(self.image_grid_scroll_area)
 
         # Set up the menu bar
         self.menu_bar = QMenuBar(self)
@@ -168,34 +174,29 @@ class MainWindow(QMainWindow):
 
         # Set up the save action
         self.save_action = QAction("Export Sprite Sheet", self)
-        self.save_action.triggered.connect(self.save_image_as)
+        self.save_action.triggered.connect(self.export_sprite_sheet)
         self.file_menu.addAction(self.save_action)
 
-        # TODO: Add an a menu bar option to import a .gif
         # Set up the import action
         self.import_gif = QAction("Import .Gif", self)
         self.import_gif.triggered.connect(self.import_as_gif)
         self.file_menu.addAction(self.import_gif)
 
-        # TODO: Add an a menu bar option to save as .gif
         # Set up the export action
         self.export_gif = QAction("Export .Gif", self)
         self.export_gif.triggered.connect(self.export_as_gif)
         self.file_menu.addAction(self.import_gif)
 
-        # TODO: Add an a menu bar option to save as .MP4
         # Set up the import action
         self.import_mp4 = QAction("Import .MP4", self)
         self.import_mp4.triggered.connect(self.import_as_mp4)
         self.file_menu.addAction(self.import_mp4)
 
-        # TODO: Add an a menu bar option to convert a video to an image sequence.
         # Set up the action
         self.convert_gif = QAction("Convert .Gif to Sequence", self)
         self.convert_gif.triggered.connect(self.convert_gif_to_Sequence)
         self.file_menu.addAction(self.convert_gif)
 
-        # TODO: Add an a menu bar option to convert a video to an image sequence.
         # Set up the action
         self.convert_mp4 = QAction("Convert .MP4 to Sequence", self)
         self.convert_mp4.triggered.connect(self.convert_mp4_to_Sequence)
@@ -217,6 +218,7 @@ class MainWindow(QMainWindow):
         play_button_style = """
             QPushButton {
                 background-color: LightGreen;
+                border: 1px solid Black;
                 font-size: 26px;
                 border-radius: 8px;  
                 width: 150px;
@@ -235,6 +237,7 @@ class MainWindow(QMainWindow):
         """
         stop_button_style = """
             QPushButton {
+                background-color: LightPink;
                 border: 1px solid Black;
                 font-size: 26px;
                 border-radius: 8px;          
@@ -567,6 +570,12 @@ class MainWindow(QMainWindow):
                 scroll_area.setWidgetResizable(True)
                 self.sprite_sheet_dock_widget.setWidget(scroll_area)
 
+                # Set up the scroll area for the Image Grid widget
+                # image_grid_scroll_area = QScrollArea()
+                # image_grid_scroll_area.setWidget(self.image_grid_widget)
+                # image_grid_scroll_area.setWidgetResizable(True)
+                # self.image_dock_widget.setWidget(image_grid_scroll_area)
+
         except Exception as err:
             self.debug(str(err.args))
 
@@ -897,7 +906,7 @@ class MainWindow(QMainWindow):
             # Handle the case where the image width or height value is not a valid integer
             print("Invalid image width or height value. Please enter a valid integer.")
 
-    def save_image_as(self) -> None:
+    def export_sprite_sheet(self) -> None:
         """
         Save the sprite sheet image as a PNG file.
 
