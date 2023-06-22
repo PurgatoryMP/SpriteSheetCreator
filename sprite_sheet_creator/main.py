@@ -16,7 +16,7 @@ Classes:
 Methods:
     - __init__(): Initializes the ImageGridApp and sets up the main window, dock widgets, menu, and controls.
     - create_checker_pattern(width, height, square_size): Create a checker pattern image.
-    - import_images(): Imports and displays images from a selected directory.
+    - import_image_sequence(): Imports and displays images from a selected directory.
     - next_frame(): Moves to the next frame in the playback sequence.
     - update_playback_label(): Updates the playback label with the current frame from the image sequence.
     - update_start_frame(): Updates the start frame based on user input in the control widget.
@@ -26,17 +26,21 @@ Methods:
     - update_sprite_sheet(): Updates the sprite sheet based on the specified image sequence.
 """
 
+import moviepy.editor as mp
 import os
+import shutil
 import tempfile
+
+from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from pathlib import Path
 from PIL import Image
+
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap, QImage, QColor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QGridLayout, QFileDialog, QLabel, QMenuBar, QAction, \
-    QDockWidget, QLineEdit, QVBoxLayout, QScrollArea, QPushButton, QHBoxLayout, QSpinBox
-
-from threading import Thread
+    QDockWidget, QLineEdit, QVBoxLayout, QScrollArea, QPushButton, QHBoxLayout, QSpinBox, QMessageBox, QDialog, \
+    QDesktopWidget
 
 
 class MainWindow(QMainWindow):
@@ -48,7 +52,7 @@ class MainWindow(QMainWindow):
 
     Methods:
         __init__(): Initializes the ImageGridApp and sets up the main window, dock widgets, menu, and controls.
-        import_images(): Imports and displays images from a selected directory.
+        import_image_sequence(): Imports and displays images from a selected directory.
         next_frame(): Moves to the next frame in the playback sequence.
         update_playback_label(): Updates the playback label with the current frame from the image sequence.
         update_start_frame(): Updates the start frame based on user input in the control widget.
@@ -65,8 +69,8 @@ class MainWindow(QMainWindow):
         """
         super().__init__()
 
-        checker_image = self.create_checker_pattern(16, 16, 8)
-        widget_background = f'background-image: url("{checker_image}"); border: 1px solid black;'
+        checker_image = self.create_checker_pattern(1024, 1024, 8)
+        self.widget_background = f'background-image: url("{checker_image}"); border: 1px solid black;'
 
         self.setWindowTitle("Sprite Sheet Creator")
         self.setStyleSheet("background-color: White;")
@@ -92,7 +96,7 @@ class MainWindow(QMainWindow):
 
         # Set up the playback dock widget
         self.playback_dock_widget = QDockWidget("Playback", self)
-        self.playback_dock_widget.setStyleSheet(widget_background)
+        self.playback_dock_widget.setStyleSheet(self.widget_background)
         self.playback_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.playback_dock_widget.setFeatures(QDockWidget.AllDockWidgetFeatures)
         self.layout.addWidget(self.playback_dock_widget, 1, 2, 9, 2)  # Adjust the row and column spans as needed
@@ -107,7 +111,7 @@ class MainWindow(QMainWindow):
         # TODO: Add zoom function to this widget.
         # Set up the sprite sheet dock widget
         self.sprite_sheet_dock_widget = QDockWidget("Sprite Sheet", self)
-        self.sprite_sheet_dock_widget.setStyleSheet(widget_background)
+        self.sprite_sheet_dock_widget.setStyleSheet(self.widget_background)
         self.sprite_sheet_dock_widget.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.sprite_sheet_dock_widget.setFeatures(QDockWidget.AllDockWidgetFeatures)
         self.layout.addWidget(self.sprite_sheet_dock_widget, 1, 6, 9, 2)  # Adjust the row and column spans as needed
@@ -169,38 +173,62 @@ class MainWindow(QMainWindow):
 
         # Set up the import action
         self.import_action = QAction("Import Image Sequence", self)
-        self.import_action.triggered.connect(self.import_images)
+        self.import_action.triggered.connect(self.import_image_sequence)
         self.file_menu.addAction(self.import_action)
-
-        # Set up the save action
-        self.save_action = QAction("Export Sprite Sheet", self)
-        self.save_action.triggered.connect(self.export_sprite_sheet)
-        self.file_menu.addAction(self.save_action)
 
         # Set up the import action
         self.import_gif = QAction("Import .Gif", self)
         self.import_gif.triggered.connect(self.import_as_gif)
         self.file_menu.addAction(self.import_gif)
 
-        # Set up the export action
-        self.export_gif = QAction("Export .Gif", self)
-        self.export_gif.triggered.connect(self.export_as_gif)
-        self.file_menu.addAction(self.import_gif)
-
         # Set up the import action
-        self.import_mp4 = QAction("Import .MP4", self)
+        self.import_mp4 = QAction("Import .Mp4", self)
         self.import_mp4.triggered.connect(self.import_as_mp4)
         self.file_menu.addAction(self.import_mp4)
 
-        # Set up the action
+        # Adds a seperator between the different options.
+        self.file_menu.addSeparator()
+
+        # Set up the export action.
+        self.export_gif = QAction("Export .Gif", self)
+        self.export_gif.triggered.connect(self.export_as_gif)
+        self.file_menu.addAction(self.export_gif)
+
+        # Set up the export action.
+        self.export_mp4 = QAction("Export .Mp4", self)
+        self.export_mp4.triggered.connect(self.export_as_mp4)
+        self.file_menu.addAction(self.export_mp4)
+
+        # Set up the export action.
+        self.export_webm = QAction("Export .Webm", self)
+        self.export_webm.triggered.connect(self.export_as_webm)
+        self.file_menu.addAction(self.export_webm)
+
+        # Adds a seperator between the different options.
+        self.file_menu.addSeparator()
+
+        # Set up the save export action
+        self.save_action = QAction("Export Sprite Sheet", self)
+        self.save_action.triggered.connect(self.export_sprite_sheet)
+        self.file_menu.addAction(self.save_action)
+
+        # Adds a seperator between the different options.
+        self.file_menu.addSeparator()
+
+        # Set up the convert .Gif to sequence action.
         self.convert_gif = QAction("Convert .Gif to Sequence", self)
         self.convert_gif.triggered.connect(self.convert_gif_to_Sequence)
         self.file_menu.addAction(self.convert_gif)
 
-        # Set up the action
-        self.convert_mp4 = QAction("Convert .MP4 to Sequence", self)
+        # Set up the convert .MP4 to sequence action.
+        self.convert_mp4 = QAction("Convert .Mp4 to Sequence", self)
         self.convert_mp4.triggered.connect(self.convert_mp4_to_Sequence)
         self.file_menu.addAction(self.convert_mp4)
+
+        # Set up exit option.
+        self.close_app = QAction("Exit", self)
+        self.close_app.triggered.connect(self.closeEvent)
+        self.file_menu.addAction(self.close_app)
 
         # Set up the playback timer
 
@@ -210,7 +238,7 @@ class MainWindow(QMainWindow):
         self.current_frame = 0
         self.image_sequence = []
 
-        # Set up the controls widget
+        # Set up the controls widget.
         self.controls_widget = QWidget(self.controls_dock_widget)
         self.controls_layout = QVBoxLayout(self.controls_widget)
         self.controls_dock_widget.setWidget(self.controls_widget)
@@ -256,51 +284,57 @@ class MainWindow(QMainWindow):
             }
         """
         label_style = """
-                    QLabel {
-                        background-color: White;
-                        color: Black;
-                        font-size: 16px;
-                        border: 1px solid Black;
-                        border-radius: 8px;
-                        padding: 6px;
-                    }
-                    QLineEdit {
-                        background-color: White;
-                        color: Black;
-                        font-size: 16px;
-                        border: 1px solid Black;
-                        border-radius: 8px;
-                        padding: 6px;
-                    }
-                """
+            QLabel {
+                background-color: White;
+                color: Black;
+                font-size: 16px;
+                border: 1px solid Black;
+                border-radius: 8px;
+                padding: 6px;
+            }
+            QLineEdit {
+                background-color: White;
+                color: Black;
+                font-size: 16px;
+                border: 1px solid Black;
+                border-radius: 8px;
+                padding: 6px;
+            }
+        """
 
-        # Set up the play button controls
+        # Set up the play button controls.
         self.play_button = QPushButton("Play")
         self.play_button.setStyleSheet(play_button_style)
 
-        # Set up the stop button controls
+        # Set up the stop button controls.
         self.stop_button = QPushButton("Stop")
         self.stop_button.setStyleSheet(stop_button_style)
 
-        #TODO: Convert these controls to QSpinBox, Currently doing so seems to break the sprite sheet and playback.
+        # TODO: Convert these controls to QSpinBox, Currently doing so seems to break the sprite sheet and playback.
 
-        # Set up the start frame controls
+        # Set up the start frame controls.
         self.start_frame_label = QLabel("Start Frame:")
         self.start_frame_label.setStyleSheet(label_style)
         self.start_frame_input = QLineEdit()
         self.start_frame_input.setStyleSheet(label_style)
 
-        # Set up the end frame controls
+        # set the initial value for the start frame to 0
+        self.start_frame_input.setText("0")
+
+        # Set up the end frame controls.
         self.end_frame_label = QLabel("End Frame:")
         self.end_frame_label.setStyleSheet(label_style)
         self.end_frame_input = QLineEdit()
         self.end_frame_input.setStyleSheet(label_style)
 
-        # Set up the FPS controls
+        # Set up the FPS controls.
         self.fps_label = QLabel("Playback FPS:")
         self.fps_label.setStyleSheet(label_style)
         self.fps_input = QLineEdit()
         self.fps_input.setStyleSheet(label_style)
+
+        # set the initial value for the fps to 30
+        self.fps_input.setText("30")
 
         QSpinBox_style = """
             QSpinBox {
@@ -332,7 +366,7 @@ class MainWindow(QMainWindow):
 
         # TODO: Add functionality to the grid inputs to define the number or rows and columns in the sprite sheet.
 
-        # Set up the image grid controls
+        # Set up the image grid controls.
         self.grid_rows_label = QLabel("Grid Rows:")
         self.grid_rows_label.setStyleSheet(label_style)
         self.grid_rows_input = QSpinBox()
@@ -345,19 +379,31 @@ class MainWindow(QMainWindow):
         self.grid_columns_input.setStyleSheet(QSpinBox_style)
         self.grid_columns_input.setValue(8)
 
-        # Set up the image size controls
+        # Set up the image size controls.
         self.image_width_label = QLabel("Image Width:")
         self.image_width_label.setStyleSheet(label_style)
         self.image_width_input = QLineEdit()
         self.image_width_input.setStyleSheet(label_style)
+
         self.image_height_label = QLabel("Image Height:")
         self.image_height_label.setStyleSheet(label_style)
         self.image_height_input = QLineEdit()
         self.image_height_input.setStyleSheet(label_style)
 
-        # Create horizontal layouts for labels and inputs
+        # Set the default sprite sheet size.
+        self.image_width_input.setText("2048")
+        self.image_height_input.setText("2048")
+
+        # Set the controls for the frame number output
+        self.frame_number_label = QLabel("Frame Number:")
+        self.frame_number_label.setStyleSheet(label_style)
+        self.frame_number_display = QLabel("display:")
+        self.frame_number_display.setStyleSheet(label_style)
+
+        # Create horizontal layouts for labels and inputs.
         label_input_layouts = []
         for label, input_ in [
+            (self.frame_number_label, self.frame_number_display),
             (self.play_button, self.stop_button),
             (self.start_frame_label, self.start_frame_input),
             (self.end_frame_label, self.end_frame_input),
@@ -375,7 +421,7 @@ class MainWindow(QMainWindow):
         for layout in label_input_layouts:
             self.controls_layout.addLayout(layout)
 
-        # Connect the input fields to update functions
+        # Connect the input fields to update functions.
         self.play_button.clicked.connect(self.start_timer)
         self.stop_button.clicked.connect(self.stop_timer)
 
@@ -390,14 +436,13 @@ class MainWindow(QMainWindow):
         self.image_width_input.returnPressed.connect(self.update_image_size)
         self.image_height_input.returnPressed.connect(self.update_image_size)
 
-        
     def update_grid_rows(self):
         value = self.grid_rows_input.value()
         if value <= 0:
             value = 0
         print("grid_rows_input: {}".format(value))
-        
-    def update_grid_columns(self):        
+
+    def update_grid_columns(self):
         value = self.grid_columns_input.value()
         if value <= 0:
             value = 0
@@ -411,36 +456,23 @@ class MainWindow(QMainWindow):
         """Starts the QT QTimer Method Playing the image sequence."""
         self.playback_timer.start()
 
-    def import_as_gif(self) -> None:
+    def get_image_scale(self, image_path) -> tuple:
         """
-        Imports a gif file and converts it to an image sequence.
-        """
-        print("import_as_gif")
+        Gets the width and height of a specified image as a tuple
 
-    def export_as_gif(self) -> None:
-        """
-        exports a gif file which is the image sequence.
-        """
-        print("export_as_gif")
+        Args:
+            image_path: (str): The path to the image.
 
-    def import_as_mp4(self) -> None:
-        """
-        Imports a .MP4 file and converts it to an image sequence.
-        This MP4 may contain audio information. Maybe this can be re-used?
-        """
-        print("import_as_mp4")
+        Returns:
+            tuple: A tuple (Width, Height) of the image.
 
-    def convert_gif_to_Sequence(self) -> None:
         """
-        imports a gif file and then converts it to an image sequence saving it out to a user defined directory.
-        """
-        print("convert_gif_to_Sequence")
-
-    def convert_mp4_to_Sequence(self) -> None:
-        """
-        imports a .MP4 file and then converts it to an image sequence saving it out to a user defined directory.
-        """
-        print("convert_mp4_to_Sequence")
+        try:
+            image = Image.open(image_path)
+            image_width, image_height = image.size
+            return image_width, image_height
+        except Exception as err:
+            self.debug(str(err.args))
 
     def create_checker_pattern(self, width: int, height: int, square_size: int) -> str:
         """
@@ -466,77 +498,102 @@ class MainWindow(QMainWindow):
                     else:
                         image.setPixelColor(x, y, color2)
 
-            # Save the image to a temporary file
+            # Save the image to a temporary file.
             temp_file_path = tempfile.mktemp(suffix='.png')
             image.save(temp_file_path)
 
-            # convert the path
+            # convert the path.
             image_path = temp_file_path.replace("\\", "/")
 
             return image_path
         except Exception as err:
             self.debug(str(err.args))
 
-    def import_images(self) -> None:
+    def populate_widgets(self, sequence: list) -> None:
         """
-        Imports and displays images from a selected directory.
+        Populates the widgets in the main window with the images contained in the image sequence.
 
         This method opens a file dialog to allow the user to select a directory.
         It then retrieves all image files (png and jpg) from the selected directory,
         creates labels for each image, and displays them in a grid layout.
 
-        Note: This method assumes the existence of instance variables such as self.image_sequence,
-        self.image_dock_widget, self.start_frame_input, self.end_frame_input, self.fps_input,
-        self.playback_dock_widget, self.playback_label, self.controls_dock_widget, self.controls_widget,
-        self.current_frame, self.playback_timer, self.playback_interval, and self.update_sprite_sheet().
+        Args:
+            sequence: (list) a list containing the file paths for each image in the image sequence.
 
         Returns:
             None
+
+        See Also:
+            This method assumes the existence of instance variables such as self.image_sequence
+
+            self.image_dock_widget
+
+            self.start_frame_input
+
+            self.end_frame_input
+
+            self.fps_input
+
+            self.playback_dock_widget
+
+            self.playback_label
+
+            self.controls_dock_widget
+
+            self.controls_widget
+
+            self.current_frame
+
+            self.playback_timer
+
+            self.playback_interval
+
+            self.update_sprite_sheet()
         """
+
+        # TODO: Clean up this function. Move widgets to there own modules.
         try:
-            # TODO: Move this image importer into its own module.
+            if sequence:
 
-            # Open file dialog to select directory
-            directory = QFileDialog.getExistingDirectory(self, "Select Directory")
-            if directory:
-                # Retrieve image files from the selected directory
-                # image_files = [file for file in os.listdir(directory) if file.endswith(".png") or file.endswith(".jpg")]
-                image_files = list(Path(directory).glob("*.png")) + list(Path(directory).glob("*.jpg"))
-
-                self.image_sequence = [os.path.join(directory, file) for file in image_files]
-
+                # Get the number of frames
                 num_images = len(self.image_sequence)
-                grid_size = int(num_images ** 0.5)
 
-                # Create a content widget for the image dock widget
-                image_dock_content = QWidget(self.image_dock_widget)
-                image_dock_layout = QGridLayout(image_dock_content)
+                # set the end frame number in the controls.
+                self.end_frame_input.setText(str(num_images - 1))
+
+                # Set the grid size
+                grid_size = int(len(sequence[int(self.start_frame_input.text()):int(self.end_frame_input.text()) + 1]) ** 0.5)
+
+                grid_rows = num_images // grid_size
+                grid_columns = int(self.end_frame_input.text()) % grid_size
+
+                self.grid_rows_input.setValue(grid_rows)
+                self.grid_columns_input.setValue(grid_columns)
+
+                # Create a content widget for the image dock widget.
+                self.image_dock_content = QWidget(self.image_dock_widget)
+                image_dock_layout = QGridLayout(self.image_dock_content)
                 image_dock_layout.setSpacing(0)
                 image_dock_layout.setContentsMargins(0, 0, 0, 0)
 
                 for i, image_path in enumerate(self.image_sequence):
                     # Create pixmap and adjust image size
                     pixmap = QPixmap(image_path)
-                    pixmap = pixmap.scaledToHeight(100, Qt.SmoothTransformation)
+                    pixmap = pixmap.scaledToHeight(50, Qt.SmoothTransformation)
 
-                    # Create label for the image and add it to the layout
+                    # Create label for the image and add it to the layout.
                     image_label = QLabel()
+                    image_label.setStyleSheet(self.widget_background)
                     image_label.setPixmap(pixmap)
                     image_dock_layout.addWidget(image_label, i // grid_size, i % grid_size)
+                    image_dock_layout.setAlignment(self.image_dock_content, Qt.AlignCenter)
 
-                # Set the layout for the image dock content widget
-                image_dock_content.setLayout(image_dock_layout)
-                self.image_dock_widget.setWidget(image_dock_content)
+                # Set the layout for the image dock content widget.
+                self.image_dock_content.setLayout(image_dock_layout)
+                self.image_dock_widget.setWidget(self.image_dock_content)
                 self.addDockWidget(Qt.LeftDockWidgetArea, self.image_dock_widget)
 
-                # Set initial values for frame inputs and FPS input
-                self.start_frame_input.setText("0")
-                self.end_frame_input.setText(str(num_images - 1))
-                self.fps_input.setText("24")
-
-                # Set the default sprite sheet size.
-                self.image_width_input.setText("2048")
-                self.image_height_input.setText("2048")
+                # TODO: Center the playback in the widget.
 
                 # Create a content widget for the playback dock widget
                 playback_dock_content = QWidget(self.playback_dock_widget)
@@ -546,36 +603,49 @@ class MainWindow(QMainWindow):
 
                 self.playback_label = QLabel()
                 playback_dock_layout.addWidget(self.playback_label)
+                playback_dock_layout.setAlignment(self.playback_label, Qt.AlignCenter)
 
-                # Set the layout for the playback dock content widget
+                # Set the layout for the playback dock content widget.
                 playback_dock_content.setLayout(playback_dock_layout)
                 self.playback_dock_widget.setWidget(playback_dock_content)
                 self.addDockWidget(Qt.RightDockWidgetArea, self.playback_dock_widget)
 
-                # Set the controls dock widget and add it to the layout
+                # Set the controls dock widget and add it to the layout.
                 self.controls_dock_widget.setWidget(self.controls_widget)
                 self.addDockWidget(Qt.RightDockWidgetArea, self.controls_dock_widget)
 
-                # Initialize current frame and start the playback timer
+                # TODO: Fix the docking areas on the main window so that the widgets dock correctly.
+
+                # self.splitDockWidget(self.image_dock_widget, self.playback_dock_widget, Qt.Horizontal)
+                # self.splitDockWidget(self.sprite_sheet_dock_widget, self.controls_dock_widget, Qt.Horizontal)
+                # self.splitDockWidget(self.image_dock_widget, self.playback_dock_widget, Qt.Vertical)
+                # self.splitDockWidget(self.sprite_sheet_dock_widget, self.controls_dock_widget, Qt.Vertical)
+
+                # self.sprite_sheet_dock_widget.setWidget(self.sprite_sheet_widget)
+                # self.addDockWidget(Qt.LeftDockWidgetArea, self.sprite_sheet_dock_widget)
+
+                # Initialize current frame and start the playback timer.
                 self.current_frame = 0
                 self.playback_timer.start(self.playback_interval)
                 self.update_playback_label()
 
-                # Update the sprite sheet widget with the first image
-                self.update_sprite_sheet()
-
-                # Set up the scroll area for the sprite sheet widget
+                # Set up the scroll area for the sprite sheet widget.
                 scroll_area = QScrollArea()
                 scroll_area.setWidget(self.sprite_sheet_widget)
                 scroll_area.setWidgetResizable(True)
                 self.sprite_sheet_dock_widget.setWidget(scroll_area)
 
-                # Set up the scroll area for the Image Grid widget
-                # image_grid_scroll_area = QScrollArea()
-                # image_grid_scroll_area.setWidget(self.image_grid_widget)
-                # image_grid_scroll_area.setWidgetResizable(True)
-                # self.image_dock_widget.setWidget(image_grid_scroll_area)
+                # Set up the scroll area for the playback widget.
+                # playback_scroll_area = QScrollArea()
+                # playback_scroll_area.setWidget(self.playback_label)
+                # playback_scroll_area.setWidgetResizable(True)
+                # self.playback_dock_widget.setWidget(playback_scroll_area)
 
+                # Update the sprite sheet widget with the first image.
+                self.update_sprite_sheet()
+
+            else:
+                print("Image sequence was not provided. Unable to populate widgets.")
         except Exception as err:
             self.debug(str(err.args))
 
@@ -604,6 +674,8 @@ class MainWindow(QMainWindow):
                 if self.current_frame > end_frame:
                     # Reset the current frame to the start frame
                     self.current_frame = start_frame
+
+            self.frame_number_display.setText(str(self.current_frame))
 
             # Update the playback label to reflect the new frame
             self.update_playback_label()
@@ -757,8 +829,7 @@ class MainWindow(QMainWindow):
                 if start_frame and end_frame:
                     visible_images = self.image_sequence[start_frame:end_frame + 1]
 
-                    num_images = len(visible_images)
-                    grid_size = int(num_images ** 0.5)
+                    grid_size = int(len(self.image_sequence[start_frame:end_frame + 1]) ** 0.5)
                     print("grid_size: {}".format(grid_size))
 
                     # Adjust grid size to ensure an even number of rows and columns
@@ -776,10 +847,11 @@ class MainWindow(QMainWindow):
                     # Add each visible image to the grid
                     for i, image_path in enumerate(visible_images):
                         pixmap = QPixmap(image_path)
-                        pixmap = pixmap.scaledToHeight(100, Qt.SmoothTransformation)  # Adjust the image size as needed
+                        pixmap = pixmap.scaledToHeight(50, Qt.SmoothTransformation)  # Adjust the image size as needed
                         image_label = QLabel()
                         image_label.setPixmap(pixmap)
                         image_dock_layout.addWidget(image_label, i // grid_size, i % grid_size)
+                        image_dock_layout.setAlignment(image_label, Qt.AlignCenter)
 
                     # Set the layout for the image dock
                     image_dock_content.setLayout(image_dock_layout)
@@ -906,6 +978,23 @@ class MainWindow(QMainWindow):
             # Handle the case where the image width or height value is not a valid integer
             print("Invalid image width or height value. Please enter a valid integer.")
 
+    def import_image_sequence(self) -> None:
+        """
+        Imports an image sequence from a selected directory.
+        """
+        try:
+            # Open file dialog to select directory
+            directory = QFileDialog.getExistingDirectory(self, "Select Directory")
+            if directory:
+                # Retrieve image files from the selected directory
+                image_files = list(Path(directory).glob("*.png")) + list(Path(directory).glob("*.jpg"))
+                self.image_sequence = [os.path.join(directory, file) for file in image_files]
+                image_scale = self.get_image_scale(self.image_sequence[0])
+                print("Image Scale = {}x{}".format(image_scale[0], image_scale[1]))
+                self.populate_widgets(self.image_sequence)
+        except Exception as err:
+            self.debug(str(err.args))
+
     def export_sprite_sheet(self) -> None:
         """
         Save the sprite sheet image as a PNG file.
@@ -921,7 +1010,8 @@ class MainWindow(QMainWindow):
                 sprite_sheet_image = QImage(self.sprite_sheet_widget.pixmap().toImage())
 
                 # Calculate the number of rows and columns in the sprite sheet
-                num_rows = int(len(self.image_sequence[int(self.start_frame_input.text()):int(self.end_frame_input.text()) + 1]) ** 0.5)
+                num_rows = int(len(self.image_sequence[
+                                   int(self.start_frame_input.text()):int(self.end_frame_input.text()) + 1]) ** 0.5)
                 num_columns = num_rows
 
                 # Calculate the frame range and frames per second (fps)
@@ -937,9 +1027,206 @@ class MainWindow(QMainWindow):
                     # Save the sprite sheet image to the specified file path
                     sprite_sheet_image.save(file_path)
 
+                    # open a popup dialog with a button the user can click to open the output directory in the file explorer.
+                    self.path = os.path.dirname(file_path)
+                    self.open_dialog(self.path)
+
         except Exception as err:
             # Handle any exceptions and print the error message
             self.debug(str(err.args))
+
+    def import_as_gif(self) -> None:
+        """
+        Imports a gif file and converts it to an image sequence.
+        """
+        gif_path, _ = QFileDialog.getOpenFileName(self, "Graphics Interchange Files", "", "Gif Files (*.gif)")
+
+        temp_dir = tempfile.mkdtemp(prefix='SSC_temp_', dir=tempfile.gettempdir())
+        print(temp_dir)
+
+        if gif_path:
+            # Convert gif to an image sequence
+            gif = Image.open(gif_path)
+            frames = []
+            try:
+                while True:
+                    frames.append(gif.copy())
+                    gif.seek(len(frames))  # Move to the next frame
+            except EOFError:
+                pass
+
+            for i, frame in enumerate(frames):
+                output_path = f"{temp_dir}/{i}.png"
+                frame.save(output_path, "PNG")
+
+            image_files = list(Path(temp_dir).glob("*.png")) + list(Path(temp_dir).glob("*.jpg"))
+            self.image_sequence = [os.path.join(temp_dir, file) for file in image_files]
+            self.populate_widgets(self.image_sequence)
+            print("import_as_gif")
+
+    def export_as_gif(self) -> None:
+        """
+        exports a gif file which is the image sequence.
+        """
+        try:
+            if self.image_sequence:
+                images = []
+                file_names = self.image_sequence[
+                             int(self.start_frame_input.text()):int(self.end_frame_input.text()) + 1]
+
+                # print("\n".join(file_names))
+
+                for file_path in file_names:
+                    print(file_path)
+                    if os.path.exists(file_path):
+                        try:
+                            with Image.open(file_path) as image:
+                                if image.mode != 'RGBA':
+                                    image = image.convert('RGBA')
+                                images.append(image.copy())
+                        except IOError:
+                            pass
+
+                if images:
+                    save_path, _ = QFileDialog.getSaveFileName(caption="Save GIF", filter="GIF Files (*.gif)")
+                    if save_path:
+                        frame_duration = 1000 / int(self.fps_input.text())
+                        print(frame_duration)
+                        images[0].save(save_path,
+                                       format='GIF',
+                                       save_all=True,
+                                       append_images=images[1:],
+                                       duration=10,
+                                       loop=0,
+                                       disposal=2,
+                                       background=255)
+                        self.path = os.path.dirname(save_path)
+                        self.open_dialog(self.path)
+            else:
+                print("Image sequence not provided.")
+        except Exception as err:
+            self.debug(str(err.args))
+
+    def import_as_mp4(self) -> None:
+        """
+        Imports a .MP4 file and converts it to an image sequence.
+        This MP4 may contain audio information. Maybe this can be re-used?
+        """
+        video_path, _ = QFileDialog.getOpenFileName(self, "Select Video", "", "Video Files (*.mp4)")
+
+        temp_dir = tempfile.mkdtemp(prefix='SSC_temp_', dir=tempfile.gettempdir())
+        print(temp_dir)
+
+        if video_path:
+            video = VideoFileClip(video_path)
+            frames = video.iter_frames()
+
+            for i, frame in enumerate(frames):
+                image = Image.fromarray(frame)
+                file_name = f"{temp_dir}/{i}.png"
+                image.save(file_name)
+                print(f"Saved: {file_name}")
+
+            image_files = list(Path(temp_dir).glob("*.png")) + list(Path(temp_dir).glob("*.jpg"))
+            self.image_sequence = [os.path.join(temp_dir, file) for file in image_files]
+            self.populate_widgets(self.image_sequence)
+            print("import_as_gif")
+
+    def export_as_mp4(self) -> None:
+        """
+        exports the image sequence as a .mp4 file.
+        """
+        try:
+            if self.image_sequence:
+                save_path, _ = QFileDialog.getSaveFileName(self, "Save Image As", f"Movie_{str(int(self.start_frame_input.text()) + int(self.end_frame_input.text())+1)}_{self.fps_input.text()}", filter="MP4 Image (*.mp4)")
+
+                if save_path:
+                    clip = mp.ImageSequenceClip(self.image_sequence, fps=int(self.fps_input.text()))
+                    clip.write_videofile(save_path, codec="libx264")
+
+                    # open a popup dialog with a button the user can click to open the output directory in the file explorer.
+                    self.path = os.path.dirname(save_path)
+                    self.open_dialog(self.path)
+        except Exception as err:
+            self.debug(str(err.args))
+
+    def export_as_webm(self):
+        """
+                exports the image sequence as a .mp4 file.
+                """
+        try:
+            if self.image_sequence:
+                save_path, _ = QFileDialog.getSaveFileName(self, "Save Image As", f"Webm_{str(int(self.start_frame_input.text()) + int(self.end_frame_input.text()) + 1)}_{self.fps_input.text()}", filter="WEBM Image (*.webm)")
+
+                if save_path:
+
+                    clip = mp.ImageSequenceClip(self.image_sequence, fps=int(self.fps_input.text()))
+                    clip.write_videofile(save_path, codec="libvpx-vp9")
+
+                    # open a popup dialog with a button the user can click to open the output directory in the file explorer.
+                    self.path = os.path.dirname(save_path)
+                    self.open_dialog(self.path)
+        except Exception as err:
+            self.debug(str(err.args))
+
+    def convert_gif_to_Sequence(self) -> None:
+        """
+        imports a gif file and then converts it to an image sequence saving it out to a user defined directory.
+        """
+        video_path, _ = QFileDialog.getOpenFileName(self, "Graphics Interchange Files", "", "Gif Files (*.gif)")
+
+        if video_path:
+            # Convert gif to an image sequence
+            gif = Image.open(video_path)
+            frames = []
+            try:
+                while True:
+                    frames.append(gif.copy())
+                    gif.seek(len(frames))  # Move to the next frame
+            except EOFError:
+                pass
+
+            # Select output directory
+            output_dir = QFileDialog.getExistingDirectory(self, "Select Output Directory")
+
+            # Save the image sequence to the selected directory
+            for i, frame in enumerate(frames):
+                output_path = f"{output_dir}/{i}.png"
+                frame.save(output_path, "PNG")
+
+        # open a popup dialog with a button the user can click to open the output directory in the file explorer.
+        self.path = output_dir
+        self.open_dialog(self.path)
+
+    def convert_mp4_to_Sequence(self) -> None:
+        """
+        imports a .MP4 file and then converts it to an image sequence saving it out to a user defined directory.
+        """
+        video_path, _ = QFileDialog.getOpenFileName(self, "Select Video", "", "Video Files (*.mp4)")
+
+        if video_path:
+            video = VideoFileClip(video_path)
+            frames = video.iter_frames()
+
+            output_dir = QFileDialog.getExistingDirectory(self, "Select Output Directory")
+
+            if output_dir:
+                for i, frame in enumerate(frames):
+                    image = Image.fromarray(frame)
+                    file_name = f"{output_dir}/{i}.png"
+                    image.save(file_name)
+                    print(f"Saved: {file_name}")
+
+        # open a popup dialog with a button the user can click to open the output directory in the file explorer.
+        self.path = output_dir
+        self.open_dialog(self.path)
+
+    def open_dialog(self, path: str):
+        try:
+            dialog = MessageDialog(path, self)
+            dialog.exec_()
+        except Exception as err:
+            print("Error:{}".format(err.args))
 
     @staticmethod
     def debug(message) -> None:
@@ -954,6 +1241,95 @@ class MainWindow(QMainWindow):
         """
         print("Error: {}".format(message))
 
+    def closeEvent(self, event):
+        # Code to be executed on application close
+        print("Cleaning up temp files.")
+        # You can place your cleanup code here
+
+        temp_dir = tempfile.gettempdir()
+        for root, dirs, files in os.walk(temp_dir):
+            for directory in dirs:
+                if directory.startswith('SSC_temp_'):
+                    dir_path = os.path.join(root, directory)
+                    shutil.rmtree(dir_path)
+                    print(f"Deleted temp directory: {dir_path}")
+        event.accept()
+
+
+class MessageDialog(QDialog):
+    """
+    This class creates a popup dialog box with a button which when clicked opens the directory containing the exported files.
+    """
+
+    def __init__(self, path: str, parent=None):
+        super().__init__(parent)
+
+        # set the style of the buttons.
+        label_style = """
+            QLabel {
+                background-color: White;
+                color: Black;
+                font-size: 16px;
+                qproperty-alignment: AlignCenter;
+                padding: 6px;
+            }
+            QPushButton {
+                background-color: LightGrey;
+                color: Black;
+                font-size: 16px;
+                qproperty-alignment: AlignCenter;
+                border: 1px solid Black;
+                border-radius: 8px;
+                padding: 6px;
+            }
+        """
+
+        # Name the window widget and set the size.
+        self.setWindowTitle("SSC Dialog")
+        self.setFixedSize(200, 150)
+
+        # Move dialog to center of the screen
+        self.move_to_center()
+
+        layout = QVBoxLayout()
+
+        # Create the message label
+        message_label = QLabel("Operation Complete!", self)
+        message_label.setStyleSheet(label_style)
+        layout.addWidget(message_label)
+
+        # Create the button
+        button = QPushButton("Output Directory", self)
+        button.setStyleSheet(label_style)
+        button.clicked.connect(lambda: self.open_explorer(path))
+        layout.addWidget(button)
+
+        self.setLayout(layout)
+
+    def move_to_center(self):
+        """Moves the widget to the center of the screen."""
+        # Get the screen geometry
+        screen_geometry = QDesktopWidget().screenGeometry()
+
+        # Calculate the center position for the dialog
+        center_x = screen_geometry.width() // 2 - self.width() // 2
+        center_y = screen_geometry.height() // 2 - self.height() // 2
+
+        # Move the dialog to the center position
+        self.move(center_x, center_y)
+
+    def open_explorer(self, directory_path: str):
+        """
+        Opens the explorer window to a specified file path.
+        """
+        try:
+            if os.path.exists(directory_path):
+                os.startfile(directory_path)
+            else:
+                QMessageBox.warning(self, "Error", "Path does not exist! {}".format(directory_path))
+        except Exception as err:
+            print(str(err.args))
+
 
 if __name__ == "__main__":
     try:
@@ -961,5 +1337,6 @@ if __name__ == "__main__":
         window = MainWindow()
         window.show()
         app.exec()
+
     except Exception as err:
         print(err.args)
