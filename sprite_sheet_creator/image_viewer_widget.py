@@ -5,8 +5,9 @@ from PyQt5.QtWidgets import QVBoxLayout, QScrollArea, QWidget, QGraphicsView, QG
 
 
 class ImageViewerWidget(QWidget):
-    def __init__(self, image_path):
+    def __init__(self, console_widget):
         super().__init__()
+        self.console = console_widget
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
@@ -29,17 +30,24 @@ class ImageViewerWidget(QWidget):
         self.setMouseTracking(True)
 
         self.original_pixmap = None
-        self.load_image(image_path)
+        # self.load_image(image_path)
         self.scale_factor = 1.0
         self.min_scale_factor = 0.2
         self.max_scale_factor = 3.0
 
-    def load_image(self, image_path):
-        self.original_pixmap = QPixmap(image_path)
-        self.scene.clear()
-        self.scene.addPixmap(self.original_pixmap)
 
-        self.fit_to_widget()
+    def load_image(self, image_sequence: list, frame_index: int):
+        # TODO: Make this the start_frame by default then if user selects an image from the image grid update the image to be the one selected.
+        try:
+            image_path = image_sequence[frame_index]
+
+            self.original_pixmap = QPixmap(image_path)
+            self.scene.clear()
+            self.scene.addPixmap(self.original_pixmap)
+
+            self.fit_to_widget()
+        except Exception as err:
+            self.console.append_text(str(err.args))
 
     def wheelEvent(self, event):
         if event.modifiers() == Qt.ControlModifier:

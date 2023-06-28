@@ -7,9 +7,17 @@ from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout,
 
 
 class SpriteSheetWidget(QWidget):
-    def __init__(self, directory):
+    def __init__(self, console_widget, control_widget):
         super().__init__()
-        self.directory = directory
+
+        self.sprite_sheet = None
+        self.images = None
+        self.console = console_widget
+        self.control = control_widget
+
+        self.console.append_text("Loading: Sprite Sheet Widget.\n")
+
+        self.image_sequence = []
 
         # Create the main layout
         layout = QVBoxLayout()
@@ -30,13 +38,6 @@ class SpriteSheetWidget(QWidget):
         # Add the scroll area to the layout
         layout.addWidget(scroll_area)
 
-        # Load and process the images
-        self.images = self.load_images()
-        self.sprite_sheet = self.create_sprite_sheet()
-
-        # Display the sprite sheet
-        self.display_sprite_sheet()
-
         # Zoom variables
         self.scale_factor = 1.0
         self.min_scale_factor = 0.1
@@ -45,14 +46,22 @@ class SpriteSheetWidget(QWidget):
         # Enable mouse tracking to receive mouse wheel events
         self.view.setMouseTracking(True)
 
-    def load_images(self):
-        images = []
-        file_names = [f for f in os.listdir(self.directory) if f.endswith('.png')]
-        for file_name in sorted(file_names):
-            file_path = os.path.join(self.directory, file_name)
-            image = QPixmap(file_path)
-            images.append(image)
-        return images
+        self.console.append_text("Finished Loading: Sprite Sheet Widget.\n")
+
+    def load_images(self, sequence: list):
+        image_list = []
+        self.image_sequence = sequence
+        if self.image_sequence:
+            for file_path in self.image_sequence:
+                image = QPixmap(file_path)
+                image_list.append(image)
+            self.images = image_list
+
+            if self.images:
+                self.sprite_sheet = self.create_sprite_sheet()
+
+                # Display the sprite sheet
+                self.display_sprite_sheet()
 
     def calculate_rows_columns(self):
         total_images = len(self.images)

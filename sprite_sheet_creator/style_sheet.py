@@ -35,7 +35,7 @@ def menu_bar_style():
     style_sheet = """
         QMenuBar {
             qproperty-alignment: AlignCenter;
-            background-color: #586875;
+            background-color: #545454;
             font-size: 14px;
             color: White;
             border: 1px solid Black;
@@ -234,17 +234,45 @@ def stop_btn_style():
 def console_style():
     style_sheet = """
         QTextEdit {
-            background-color: #3D3D3D; /* Background color */
+            background-color: #434D4F; /* Background color */
             color: #White; /* Text color */
             font-family: Arial, sans-serif; /* Font family */
             font-size: 12px; /* Font size */
-            border: 1px solid #CCCCCC; /* Border style */
+            border: 1px solid Black; /* Border style */
             padding: 4px; /* Padding */
         }
         
+        QTextEdit:hover {
+            background-color: #4F5B5D;
+            border: 1px solid White;
+        }
+        
         QTextEdit:focus {
-            border: 1px solid #0000FF; /* Border style when focused */
-}
+            background-color: #495456;
+            color: #White; /* Text color */
+            border: 1px solid #50BBAE; /* Border style when focused */         
+        }
+    """
+    return style_sheet
+
+def status_bar_style():
+    style_sheet = """
+        StatusBar {
+            background-color: #545454;
+            color: #000000;
+            font-family: Arial;
+            font-size: 12px;
+            border: 1px solid Black;
+            border-radius: 8px;
+        }
+        
+        StatusBar QLabel {
+            color: White;
+            font-size: 14px;
+            border: 1px solid Black;
+            border-radius: 8px;
+        }
+    
     """
     return style_sheet
 

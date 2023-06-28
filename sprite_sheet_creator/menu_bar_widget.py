@@ -1,30 +1,35 @@
-from PyQt5.QtWidgets import QMenuBar, QAction, QMenu
+from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtWidgets import QMenuBar, QAction
 
 import style_sheet
 
-def create_menu_bar():
-    menubar = QMenuBar()
+from importer import ImportExporter
 
-    file_menu = menubar.addMenu("File")
 
-    new_action = QAction("New", menubar)
-    open_action = QAction("Open", menubar)
-    save_action = QAction("Save", menubar)
-    save_as_action = QAction("Save As", menubar)
-    close_action = QAction("Close", menubar)
-    exit_action = QAction("Exit", menubar)
-    about_action = QAction("About", menubar)
+class MenuBar(QMenuBar):
+    import_image_sequence = pyqtSignal()
 
-    file_menu.addAction(new_action)
-    file_menu.addAction(open_action)
-    file_menu.addAction(save_action)
-    file_menu.addAction(save_as_action)
-    file_menu.addAction(close_action)
-    file_menu.addSeparator()
-    file_menu.addAction(exit_action)
-    file_menu.addSeparator()
-    file_menu.addAction(about_action)
+    def __init__(self, console_widget):
+        super().__init__()
+        self.image_sequence = []
+        self.importer = ImportExporter(console_widget)
+        self.console = console_widget
+        self.console.append_text("Loading: Menu Bar Widget.")
+        self.create_menu_bar()
 
-    file_menu.setStyleSheet(style_sheet.menu_bar_style())
+    def create_menu_bar(self):
+        menubar = QMenuBar()
 
-    return menubar
+        file_menu = menubar.addMenu("File")
+
+        new_action = QAction("Import Image Sequence", menubar)
+        new_action.triggered.connect(self.emit_import_image_sequence)  # Connect to a separate method
+
+        file_menu.addAction(new_action)
+
+        file_menu.setStyleSheet(style_sheet.menu_bar_style())
+
+        return menubar
+
+    def emit_import_image_sequence(self):
+        self.import_image_sequence.emit()

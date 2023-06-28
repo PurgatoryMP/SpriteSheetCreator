@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QLabel, QSpinBox, QHBoxLayout, QPushButton, QVBoxLayout, QWidget, QScrollArea, \
     QFrame
 
@@ -6,11 +6,20 @@ import style_sheet
 
 
 class ControlWidget(QWidget):
+
+    fpsValueChanged = pyqtSignal(int)
+    startframeValueChanged = pyqtSignal(int)
+    endframeValueChanged = pyqtSignal(int)
+    gridrowValueChanged = pyqtSignal(int)
+    gridcolumnValueChanged = pyqtSignal(int)
+    playClicked = pyqtSignal()
+    stopClicked = pyqtSignal()
+
     def __init__(self, control_widget):
         super().__init__()
 
         console = control_widget
-        console.append_text("Loading Controls Widget.")
+        console.append_text("Loading: Controls Widget.\n")
 
         # Set up the play button controls.
         play_button = QPushButton("Play")
@@ -23,16 +32,16 @@ class ControlWidget(QWidget):
         # Set up the start frame controls.
         start_frame_label = QLabel("Start Frame:")
         start_frame_label.setStyleSheet(style_sheet.bubble_label_style())
-        start_frame_input = QSpinBox()
-        start_frame_input.setStyleSheet(style_sheet.spinbox_style())
+        self.start_frame_input = QSpinBox()
+        self.start_frame_input.setStyleSheet(style_sheet.spinbox_style())
         # set the initial value for the start frame to 0
-        start_frame_input.setValue(0)
+        self.start_frame_input.setValue(0)
 
         # Set up the end frame controls.
         end_frame_label = QLabel("End Frame:")
         end_frame_label.setStyleSheet(style_sheet.bubble_label_style())
-        end_frame_input = QSpinBox()
-        end_frame_input.setStyleSheet(style_sheet.spinbox_style())
+        self.end_frame_input = QSpinBox()
+        self.end_frame_input.setStyleSheet(style_sheet.spinbox_style())
 
         # Set up the FPS controls.
         fps_label = QLabel("Playback FPS:")
@@ -45,29 +54,29 @@ class ControlWidget(QWidget):
         # Set up the image grid controls.
         grid_rows_label = QLabel("Grid Rows:")
         grid_rows_label.setStyleSheet(style_sheet.bubble_label_style())
-        grid_rows_input = QSpinBox()
-        grid_rows_input.setStyleSheet(style_sheet.spinbox_style())
-        grid_rows_input.setValue(8)
+        self.grid_rows_input = QSpinBox()
+        self.grid_rows_input.setStyleSheet(style_sheet.spinbox_style())
+        self.grid_rows_input.setValue(8)
 
         grid_columns_label = QLabel("Grid Columns:")
         grid_columns_label.setStyleSheet(style_sheet.bubble_label_style())
-        grid_columns_input = QSpinBox()
-        grid_columns_input.setStyleSheet(style_sheet.spinbox_style())
-        grid_columns_input.setValue(8)
+        self.grid_columns_input = QSpinBox()
+        self.grid_columns_input.setStyleSheet(style_sheet.spinbox_style())
+        self.grid_columns_input.setValue(8)
 
         # Set up the image size controls.
         image_width_label = QLabel("Image Width:")
         image_width_label.setStyleSheet(style_sheet.bubble_label_style())
-        image_width_input = QSpinBox()
-        image_width_input.setStyleSheet(style_sheet.spinbox_style())
+        self.image_width_input = QSpinBox()
+        self.image_width_input.setStyleSheet(style_sheet.spinbox_style())
 
         image_height_label = QLabel("Image Height:")
         image_height_label.setStyleSheet(style_sheet.bubble_label_style())
-        image_height_input = QSpinBox()
-        image_height_input.setStyleSheet(style_sheet.spinbox_style())
+        self.image_height_input = QSpinBox()
+        self.image_height_input.setStyleSheet(style_sheet.spinbox_style())
         # Set the default sprite sheet size.
-        image_width_input.setValue(2048)
-        image_height_input.setValue(2048)
+        self.image_width_input.setValue(2048)
+        self.image_height_input.setValue(2048)
 
         # Set the controls for the frame number output
         frame_number_label = QLabel("Frame Number:")
@@ -107,13 +116,13 @@ class ControlWidget(QWidget):
             (frame_number_label, self.frame_number_display),
             (fps_label, self.fps_input),
             (separator3, separator4),
-            (start_frame_label, start_frame_input),
-            (end_frame_label, end_frame_input),
+            (start_frame_label, self.start_frame_input),
+            (end_frame_label, self.end_frame_input),
             (separator5, separator6),
-            (grid_rows_label, grid_rows_input),
-            (grid_columns_label, grid_columns_input),
-            (image_width_label, image_width_input),
-            (image_height_label, image_height_input)
+            (grid_rows_label, self.grid_rows_input),
+            (grid_columns_label, self.grid_columns_input),
+            (image_width_label, self.image_width_input),
+            (image_height_label, self.image_height_input)
         ]
 
         layout = QVBoxLayout()
@@ -139,6 +148,17 @@ class ControlWidget(QWidget):
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(scroll_area)
 
+        self.fps_input.valueChanged.connect(self.fpsValueChanged.emit)
+        self.start_frame_input.valueChanged.connect(self.startframeValueChanged.emit)
+        self.end_frame_input.valueChanged.connect(self.endframeValueChanged.emit)
+        self.grid_rows_input.valueChanged.connect(self.gridrowValueChanged.emit)
+        self.grid_columns_input.valueChanged.connect(self.gridcolumnValueChanged.emit)
+
+        play_button.clicked.connect(self.playClicked.emit)
+        stop_button.clicked.connect(self.stopClicked.emit)
+
+        console.append_text("Finished Loading: Controls Widget.\n")
+
     def update_frame_number(self, value: int):
         """Updates the control value."""
         self.frame_number_display.setValue(value)
@@ -146,3 +166,20 @@ class ControlWidget(QWidget):
     def get_fps_value(self) -> int:
         value = self.fps_input.value()
         return value
+
+    def get_start_frame_value(self) -> int:
+        value = self.start_frame_input.value()
+        return value
+
+    def get_end_frame_value(self) -> int:
+        value = self.end_frame_input.value()
+        return value
+
+    def get_grid_rows_value(self) -> int:
+        value = self.grid_rows_input.value()
+        return value
+
+    def get_grid_columns_value(self) -> int:
+        value = self.grid_columns_input.value()
+        return value
+
