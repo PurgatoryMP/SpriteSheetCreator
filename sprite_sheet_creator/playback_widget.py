@@ -6,9 +6,9 @@ from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QScrollArea
 
 
 class PlaybackWidget(QWidget):
-    def __init__(self, console_widget, control_widget, parent=None):
+    def __init__(self, main_console_widget, control_widget, parent=None):
         super(PlaybackWidget, self).__init__(parent)
-        self.console = console_widget
+        self.console = main_console_widget
         self.console.append_text("Loading: Playback Widget.\n")
 
         self.image_list = []
@@ -34,6 +34,7 @@ class PlaybackWidget(QWidget):
             for file_path in image_sequence_list:
                 self.console.append_text("Loading Image: {}".format(file_path))
                 self.image_list.append(QImage(file_path))
+                self.start_playback()
 
     def setup_ui(self):
         layout = QVBoxLayout(self)

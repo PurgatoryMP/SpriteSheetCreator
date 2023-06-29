@@ -9,11 +9,11 @@ from importer import ImportExporter
 class MenuBar(QMenuBar):
     import_image_sequence = pyqtSignal()
 
-    def __init__(self, console_widget):
+    def __init__(self, main_console_widget):
         super().__init__()
         self.image_sequence = []
-        self.importer = ImportExporter(console_widget)
-        self.console = console_widget
+        self.importer = ImportExporter(main_console_widget)
+        self.console = main_console_widget
         self.console.append_text("Loading: Menu Bar Widget.")
         self.create_menu_bar()
 

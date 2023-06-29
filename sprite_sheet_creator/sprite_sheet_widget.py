@@ -7,12 +7,12 @@ from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout,
 
 
 class SpriteSheetWidget(QWidget):
-    def __init__(self, console_widget, control_widget):
+    def __init__(self, main_console_widget, control_widget):
         super().__init__()
 
         self.sprite_sheet = None
         self.images = None
-        self.console = console_widget
+        self.console = main_console_widget
         self.control = control_widget
 
         self.console.append_text("Loading: Sprite Sheet Widget.\n")
@@ -26,6 +26,7 @@ class SpriteSheetWidget(QWidget):
         # Create the QGraphicsView and QGraphicsScene
         self.view = QGraphicsView()
         self.view.setStyleSheet(style_sheet.graphics_scene_style())
+        self.view.setDragMode(QGraphicsView.ScrollHandDrag)
         self.scene = QGraphicsScene()
         self.view.setScene(self.scene)
 
@@ -43,35 +44,72 @@ class SpriteSheetWidget(QWidget):
         self.min_scale_factor = 0.1
         self.max_scale_factor = 10.0
 
+        # Set the minimum grid size.
+        self.minimum_grid_size = 2
+
         # Enable mouse tracking to receive mouse wheel events
         self.view.setMouseTracking(True)
 
         self.console.append_text("Finished Loading: Sprite Sheet Widget.\n")
 
     def load_images(self, sequence: list):
+        """Loads the provided image sequence.
+
+        Args:
+            sequence: str: a list of file paths to the individual images.
+        """
         image_list = []
         self.image_sequence = sequence
-        if self.image_sequence:
-            for file_path in self.image_sequence:
-                image = QPixmap(file_path)
-                image_list.append(image)
-            self.images = image_list
+        try:
+            if self.image_sequence:
+                for file_path in self.image_sequence:
+                    image = QPixmap(file_path)
+                    image_list.append(image)
+                self.images = image_list
 
-            if self.images:
-                self.sprite_sheet = self.create_sprite_sheet()
+                if self.images:
+                    self.sprite_sheet = self.create_sprite_sheet()
 
-                # Display the sprite sheet
-                self.display_sprite_sheet()
+                    # Display the sprite sheet
+                    self.display_sprite_sheet()
+        except Exception as err:
+            self.console.append_text(str(err.args))
+
+    def update_sprite_sheet(self) -> None:
+        try:
+            image_list = []
+            if self.image_sequence:
+                for file_path in self.image_sequence:
+                    image = QPixmap(file_path)
+                    image_list.append(image)
+                self.images = image_list
+
+                if self.images:
+                    self.sprite_sheet = self.create_sprite_sheet()
+
+                    # Display the sprite sheet
+                    self.display_sprite_sheet()
+                    self.fit_to_widget()
+        except Exception as err:
+            self.console.append_text(str(err.args))
 
     def calculate_rows_columns(self):
-        total_images = len(self.images)
-        rows = int(total_images ** 0.5)  # Square root rounded down for rows
-        columns = (total_images + rows - 1) // rows  # Ceiling division for columns
+        # total_images = len(self.images)
+
+        rows = self.control.get_grid_rows_value()
+        columns = self.control.get_grid_columns_value()
+        if rows <= self.minimum_grid_size:
+            rows = 2
+        elif columns <= self.minimum_grid_size:
+            columns = 2
+
+        # rows = int(total_images ** 0.5)  # Square root rounded down for rows
+        # columns = (total_images + rows - 1) // rows  # Ceiling division for columns
         return rows, columns
 
     def create_sprite_sheet(self):
-        sprite_sheet_width = 2048
-        sprite_sheet_height = 2048
+        sprite_sheet_width = self.control.get_image_width_value()
+        sprite_sheet_height = self.control.get_image_height_value()
 
         rows, columns = self.calculate_rows_columns()
 
@@ -102,7 +140,6 @@ class SpriteSheetWidget(QWidget):
     def display_sprite_sheet(self):
         self.scene.clear()
         self.scene.addPixmap(self.sprite_sheet)
-
         self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
 
     def wheelEvent(self, event):
@@ -126,7 +163,6 @@ class SpriteSheetWidget(QWidget):
             self.scale_factor = self.max_scale_factor
 
         self.view.setTransform(QTransform().scale(self.scale_factor, self.scale_factor))
-
         new_pos = self.view.mapToScene(self.view.viewport().rect().center())
 
         scroll_adjustment = new_pos - old_pos

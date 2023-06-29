@@ -1,5 +1,5 @@
 import os
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QScrollArea, QVBoxLayout
 
@@ -7,6 +7,8 @@ import style_sheet
 
 
 class ImageSequenceWidget(QWidget):
+    imageClicked = pyqtSignal(str)
+
     def __init__(self, control_widget, console_widget):
         super().__init__()
         self.console = console_widget
@@ -57,6 +59,9 @@ class ImageSequenceWidget(QWidget):
                     label.setPixmap(pixmap)
                     label.setAlignment(Qt.AlignCenter)
 
+                    # Connect the clicked signal of the label to the slot function
+                    label.mousePressEvent = lambda event, path=image_path: self.handle_image_click(event, path)
+
                     image_layout.addWidget(label)
 
                     filename_label = QLabel(os.path.basename(image_path))
@@ -70,3 +75,7 @@ class ImageSequenceWidget(QWidget):
             self.updateGeometry()
         except Exception as err:
             self.console.append_text(str(err.args))
+
+    def handle_image_click(self, event, image_path):
+        if event.button() == Qt.LeftButton:
+            self.imageClicked.emit(image_path)

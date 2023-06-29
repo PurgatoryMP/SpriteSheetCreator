@@ -6,20 +6,47 @@ import style_sheet
 
 
 class ControlWidget(QWidget):
+    """A widget for controlling playback and settings.
+
+        This widget provides controls for managing playback, such as play and stop buttons, as well as
+        settings for frame range, FPS, image grid, and image size. It emits signals when the control values
+        are changed.
+
+        Args:
+            control_widget (QWidget): The parent widget to which this control widget belongs.
+
+        Signals:
+            fpsValueChanged (int): Emitted when the FPS value is changed.
+            startframeValueChanged (int): Emitted when the start frame value is changed.
+            endframeValueChanged (int): Emitted when the end frame value is changed.
+            gridrowValueChanged (int): Emitted when the grid rows value is changed.
+            gridcolumnValueChanged (int): Emitted when the grid columns value is changed.
+            imagewidthValueChanged (int): Emitted when the image width value is changed.
+            imageheightValueChanged (int): Emitted when the image height value is changed.
+            playClicked: Emitted when the play button is clicked.
+            stopClicked: Emitted when the stop button is clicked.
+        """
 
     fpsValueChanged = pyqtSignal(int)
     startframeValueChanged = pyqtSignal(int)
     endframeValueChanged = pyqtSignal(int)
     gridrowValueChanged = pyqtSignal(int)
     gridcolumnValueChanged = pyqtSignal(int)
+    imagewidthValueChanged = pyqtSignal(int)
+    imageheightValueChanged = pyqtSignal(int)
     playClicked = pyqtSignal()
     stopClicked = pyqtSignal()
 
-    def __init__(self, control_widget):
+    def __init__(self, console_widget):
+        """Initialize the ControlWidget.
+
+        Args:
+            console_widget (QWidget): The console widget in which messages and errors are displayed.
+        """
         super().__init__()
 
-        console = control_widget
-        console.append_text("Loading: Controls Widget.\n")
+        self.console = console_widget
+        self.console.append_text("Loading: Controls Widget.\n")
 
         # Set up the play button controls.
         play_button = QPushButton("Play")
@@ -68,11 +95,13 @@ class ControlWidget(QWidget):
         image_width_label = QLabel("Image Width:")
         image_width_label.setStyleSheet(style_sheet.bubble_label_style())
         self.image_width_input = QSpinBox()
+        self.image_width_input.setRange(0, 4096)
         self.image_width_input.setStyleSheet(style_sheet.spinbox_style())
 
         image_height_label = QLabel("Image Height:")
         image_height_label.setStyleSheet(style_sheet.bubble_label_style())
         self.image_height_input = QSpinBox()
+        self.image_height_input.setRange(0, 4096)
         self.image_height_input.setStyleSheet(style_sheet.spinbox_style())
         # Set the default sprite sheet size.
         self.image_width_input.setValue(2048)
@@ -154,32 +183,140 @@ class ControlWidget(QWidget):
         self.grid_rows_input.valueChanged.connect(self.gridrowValueChanged.emit)
         self.grid_columns_input.valueChanged.connect(self.gridcolumnValueChanged.emit)
 
+        self.image_width_input.valueChanged.connect(self.imagewidthValueChanged.emit)
+        self.image_height_input.valueChanged.connect(self.imageheightValueChanged.emit)
+
         play_button.clicked.connect(self.playClicked.emit)
         stop_button.clicked.connect(self.stopClicked.emit)
 
-        console.append_text("Finished Loading: Controls Widget.\n")
+        self.console.append_text("Finished Loading: Controls Widget.\n")
 
     def update_frame_number(self, value: int):
-        """Updates the control value."""
+        """Update the frame number display.
+
+        This method updates the value displayed in the frame number display.
+
+        Args:
+            value (int): The new frame number value.
+        """
         self.frame_number_display.setValue(value)
 
     def get_fps_value(self) -> int:
+        """Get the current FPS value.
+
+        Returns:
+            int: The current FPS value.
+        """
         value = self.fps_input.value()
         return value
 
+    def set_fps_value(self, value) -> None:
+        """Set the FPS value.
+
+        Args:
+            value: The new FPS value.
+        """
+        self.fps_input.setValue(value)
+
     def get_start_frame_value(self) -> int:
+        """Get the current start frame value.
+
+        Returns:
+            int: The current start frame value.
+        """
         value = self.start_frame_input.value()
         return value
 
+    def set_start_frame_value(self, value) -> None:
+        """Set the start frame value.
+
+        Args:
+            value: The new start frame value.
+        """
+        self.start_frame_input.setValue(value)
+
     def get_end_frame_value(self) -> int:
+        """Get the current end frame value.
+
+        Returns:
+            int: The current end frame value.
+        """
         value = self.end_frame_input.value()
         return value
 
+    def set_end_frame_value(self, value) -> None:
+        """Set the end frame value.
+
+        Args:
+            value: The new end frame value.
+        """
+        self.end_frame_input.setValue(value)
+
     def get_grid_rows_value(self) -> int:
+        """Get the current grid rows value.
+
+        Returns:
+            int: The current grid rows value.
+        """
         value = self.grid_rows_input.value()
         return value
 
+    def set_grid_row_value(self, value: int) -> None:
+        """Set the grid rows value.
+
+        Args:
+            value (int): The new grid rows value.
+        """
+        self.grid_rows_input.setValue(value)
+
     def get_grid_columns_value(self) -> int:
+        """Get the current grid columns value.
+
+        Returns:
+            int: The current grid columns value.
+        """
         value = self.grid_columns_input.value()
         return value
+
+    def set_grid_columns_value(self, value: int) -> None:
+        """Set the grid columns value.
+
+        Args:
+            value (int): The new grid columns value.
+        """
+        self.grid_columns_input.setValue(value)
+
+    def get_image_width_value(self) -> int:
+        """Get the current image width value.
+
+        Returns:
+            int: The current image width value.
+        """
+        value = self.image_width_input.value()
+        return value
+
+    def set_image_width_value(self, value: int) -> None:
+        """Set the image width value.
+
+        Args:
+            value (int): The new image width value.
+        """
+        self.image_width_input.setValue(value)
+
+    def get_image_height_value(self) -> int:
+        """Get the current image height value.
+
+        Returns:
+            int: The current image height value.
+        """
+        value = self.image_height_input.value()
+        return value
+
+    def set_image_height_value(self, value: int) -> None:
+        """Set the image height value.
+
+        Args:
+            value (int): The new image height value.
+        """
+        self.image_height_input.setValue(value)
 

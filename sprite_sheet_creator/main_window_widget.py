@@ -1,3 +1,4 @@
+import os
 import sys
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
@@ -21,6 +22,7 @@ class MainWindow(QMainWindow):
         # Set window title
         self.image_sequence = None
         self.setWindowTitle("Super Sprite")
+        self.resize(1200, 800)
 
         # Define main window and docked widget style sheets
         self.setStyleSheet(style_sheet.dock_widget_style())
@@ -30,26 +32,24 @@ class MainWindow(QMainWindow):
         self.setDockOptions(QMainWindow.AllowTabbedDocks |
                             QMainWindow.AllowNestedDocks)
 
-        # TODO: Setup importer here. Load widgets After an image sequence has been selected.
-        # image_sequence_directory = "G:/Models/2023/Unicorn Dance/ohyeah/"
-        # file_path1 = "G:/Models/2023/Unicorn Dance/ohyeah/image_sequence_0.png"
-
+        # Define the console first so we can print out messages to it while loading other widgets.
         self.main_console_widget = ConsoleWidget()
         console_dock_widget = QDockWidget("Console")
         console_dock_widget.setWidget(self.main_console_widget)
         console_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         console_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        control_widget = ControlWidget(self.main_console_widget)
+        # Define the controls so we can add them to the other widgets
+        self.control_widget = ControlWidget(self.main_console_widget)
         control_dock_widget = QDockWidget("Controls")
-        control_dock_widget.setWidget(control_widget)
+        control_dock_widget.setWidget(self.control_widget)
         control_dock_widget.setMinimumWidth(250)
-        # control_dock_widget.setMaximumWidth(300)
+        control_dock_widget.setMaximumWidth(300)
         control_dock_widget.setMaximumHeight(600)
         control_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         control_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        self.image_sequence_widget = ImageSequenceWidget(control_widget, self.main_console_widget)
+        self.image_sequence_widget = ImageSequenceWidget(self.control_widget, self.main_console_widget)
         image_sequence_dock_widget = QDockWidget("Image Sequence")
         image_sequence_dock_widget.setWidget(self.image_sequence_widget)
         image_sequence_dock_widget.setMaximumHeight(300)
@@ -62,13 +62,13 @@ class MainWindow(QMainWindow):
         image_viewer_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         image_viewer_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        self.sprite_sheet_widget = SpriteSheetWidget(self.main_console_widget, control_widget)
-        sprite_sheet__dock_widget = QDockWidget("Sprite Sheet")
-        sprite_sheet__dock_widget.setWidget(self.sprite_sheet_widget)
-        sprite_sheet__dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        sprite_sheet__dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.sprite_sheet_widget = SpriteSheetWidget(self.main_console_widget, self.control_widget)
+        sprite_sheet_dock_widget = QDockWidget("Sprite Sheet")
+        sprite_sheet_dock_widget.setWidget(self.sprite_sheet_widget)
+        sprite_sheet_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        sprite_sheet_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        self.playback_widget = PlaybackWidget(self.main_console_widget, control_widget)
+        self.playback_widget = PlaybackWidget(self.main_console_widget, self.control_widget)
         playback_widget_dock_widget = QDockWidget("Playback")
         playback_widget_dock_widget.setWidget(self.playback_widget)
         playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
@@ -87,23 +87,39 @@ class MainWindow(QMainWindow):
         self.setMenuBar(menu)
 
         # Connect the controls here
-        control_widget.fpsValueChanged.connect(self.playback_widget.set_fps_value)
+        self.control_widget.fpsValueChanged.connect(self.playback_widget.set_fps_value)
         # control_widget.startframeValueChanged.connect(playback_widget.set_fps_value)
         # control_widget.endframeValueChanged.connect(playback_widget.set_fps_value)
-        # control_widget.gridrowValueChanged.connect(playback_widget.set_fps_value)
-        # control_widget.gridcolumnValueChanged.connect(playback_widget.set_fps_value)
-        control_widget.playClicked.connect(self.playback_widget.start_playback)
-        control_widget.stopClicked.connect(self.playback_widget.stop_playback)
+
+        self.control_widget.gridrowValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.gridcolumnValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.imagewidthValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.imageheightValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+
+        self.control_widget.playClicked.connect(self.playback_widget.start_playback)
+        self.control_widget.stopClicked.connect(self.playback_widget.stop_playback)
+        # self.image_sequence_widget.imageClicked.connect(self.barf)
+        self.image_sequence_widget.imageClicked.connect(self.handle_image_clicked)
 
         # add the widgets to the main window.
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, image_sequence_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, playback_widget_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, image_viewer_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, control_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, sprite_sheet__dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, sprite_sheet_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, console_dock_widget)
 
         self.main_console_widget.append_text("Finished loading widgets.\n")
+
+    def handle_image_clicked(self, image_path):
+        try:
+            if image_path:
+                self.image_viewer_widget.set_select_image(image_path)
+        except Exception as err:
+            self.main_console_widget.append_text(str(err.args))
+
+    def handle_image_path_clicked(self, image_path):
+        os.startfile(image_path)
 
     def import_image_sequence(self):
         # Implement the logic to import the image sequence here

@@ -1,13 +1,31 @@
+import os
+
 import style_sheet
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap, QTransform, QPainter
-from PyQt5.QtWidgets import QVBoxLayout, QScrollArea, QWidget, QGraphicsView, QGraphicsScene
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QScrollArea, QWidget, QGraphicsView, QGraphicsScene
 
 
 class ImageViewerWidget(QWidget):
-    def __init__(self, console_widget):
+    imagepathClicked = pyqtSignal(str)
+
+    def __init__(self, main_console_widget):
+        """Initialize the ImageViewerWidget.
+
+        Args:
+            console_widget (QWidget): The console widget for displaying messages.
+        """
         super().__init__()
-        self.console = console_widget
+
+        self.console = main_console_widget
+        self.console.append_text("Loading: Image Viewer Widget.")
+
+        self.setMouseTracking(True)
+        self.scroll_pos = None
+        self.original_pixmap = None
+
+        self.display_name_label = QLabel("File Name:")
+        self.display_name_label.setStyleSheet(style_sheet.bubble_label_style())
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
@@ -25,61 +43,119 @@ class ImageViewerWidget(QWidget):
         self.scroll_area.setWidget(self.view)
 
         layout = QVBoxLayout(self)
+        layout.addWidget(self.display_name_label)
         layout.addWidget(self.scroll_area)
 
-        self.setMouseTracking(True)
-
-        self.original_pixmap = None
-        # self.load_image(image_path)
         self.scale_factor = 1.0
         self.min_scale_factor = 0.2
         self.max_scale_factor = 3.0
 
+        # Call the method to update the display name label with an empty file name
+        self.set_display_name_label("")
+        self.console.append_text("Finished Loading: Image Viewer Widget.")
 
-    def load_image(self, image_sequence: list, frame_index: int):
-        # TODO: Make this the start_frame by default then if user selects an image from the image grid update the image to be the one selected.
+    def load_image(self, image_sequence: list, frame_index: int) -> None:
+        """Load and display an image from an image sequence.
+
+        Args:
+            image_sequence (list): The list of image paths in the sequence.
+            frame_index (int): The index of the frame to display.
+        """
         try:
             image_path = image_sequence[frame_index]
-
             self.original_pixmap = QPixmap(image_path)
             self.scene.clear()
             self.scene.addPixmap(self.original_pixmap)
-
             self.fit_to_widget()
+            self.set_display_name_label(image_path)
         except Exception as err:
             self.console.append_text(str(err.args))
 
-    def wheelEvent(self, event):
+    def set_select_image(self, file_path) -> None:
+        """Set and display a selected image.
+
+        Args:
+            file_path (str): The path of the selected image file.
+        """
+        try:
+            if file_path:
+                self.set_display_name_label(file_path)
+                self.console.append_text("Selected image: {}".format(os.path.basename(file_path)))
+                self.original_pixmap = QPixmap(file_path)
+                self.scene.clear()
+                self.scene.addPixmap(self.original_pixmap)
+                self.fit_to_widget()
+            else:
+                self.console.append_text("ERROR: File Not Found: {}".format(file_path))
+
+        except Exception as err:
+            self.console.append_text(str(err.args))
+
+    def wheelEvent(self, event) -> None:
+        """Handle wheel events for zooming the image.
+
+        Args:
+            event (QWheelEvent): The wheel event object.
+        """
         if event.modifiers() == Qt.ControlModifier:
             # Only zoom when the Ctrl key is pressed
             scroll_delta = event.angleDelta().y()
             zoom_factor = 1.1 if scroll_delta > 0 else 0.9
 
             cursor_pos = event.pos()
-            scroll_pos = self.view.mapToScene(cursor_pos)
+            self.scroll_pos = self.view.mapToScene(cursor_pos)
 
-            self.zoom_image(zoom_factor, scroll_pos)
+            self.zoom_image(zoom_factor)
 
-    def zoom_image(self, zoom_factor, scroll_pos):
-        old_pos = self.view.mapToScene(self.view.viewport().rect().center())
+    def zoom_image(self, zoom_factor) -> None:
+        """Zoom the displayed image.
 
-        self.scale_factor *= zoom_factor
-        if self.scale_factor < self.min_scale_factor:
-            self.scale_factor = self.min_scale_factor
-        elif self.scale_factor > self.max_scale_factor:
-            self.scale_factor = self.max_scale_factor
+        Args:
+            zoom_factor (float): The zoom factor.
+        """
+        try:
+            old_pos = self.view.mapToScene(self.view.viewport().rect().center())
 
-        self.view.setTransform(QTransform().scale(self.scale_factor, self.scale_factor))
+            self.scale_factor *= zoom_factor
+            if self.scale_factor < self.min_scale_factor:
+                self.scale_factor = self.min_scale_factor
+            elif self.scale_factor > self.max_scale_factor:
+                self.scale_factor = self.max_scale_factor
 
-        new_pos = self.view.mapToScene(self.view.viewport().rect().center())
+            self.view.setTransform(QTransform().scale(self.scale_factor, self.scale_factor))
 
-        scroll_adjustment = new_pos - old_pos
-        self.view.horizontalScrollBar().setValue(
-            int(self.view.horizontalScrollBar().value()) + int(scroll_adjustment.x())
-        )
-        self.view.verticalScrollBar().setValue(
-            int(self.view.verticalScrollBar().value()) + int(scroll_adjustment.y())
-        )
+            new_pos = self.view.mapToScene(self.view.viewport().rect().center())
 
-    def fit_to_widget(self):
+            scroll_adjustment = new_pos - old_pos
+            self.view.horizontalScrollBar().setValue(
+                int(self.view.horizontalScrollBar().value()) + int(scroll_adjustment.x())
+            )
+            self.view.verticalScrollBar().setValue(
+                int(self.view.verticalScrollBar().value()) + int(scroll_adjustment.y())
+            )
+
+            if self.scroll_pos is not None:
+                self.view.centerOn(self.scroll_pos)
+        except Exception as err:
+            self.console.append_text("ERROR: Zoom Error: {}".format(err.args))
+
+    def fit_to_widget(self) -> None:
+        """Fit the image to the size of the widget."""
         self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
+
+    def set_display_name_label(self, file_path) -> None:
+        """Set the text of the QLabel to the name of the file currently being displayed.
+
+        Args:
+            file_path (str): The path of the file being displayed.
+        """
+        try:
+            if self.display_name_label is not None and file_path:
+                self.display_name_label.setText("{}".format(file_path))
+                self.display_name_label.mousePressEvent = lambda event, path=file_path: self.handle_image_path_click(event, path)
+        except Exception as err:
+            self.console.append_text(str(err.args))
+
+    def handle_image_path_click(self, event, image_path):
+        if event.button() == Qt.LeftButton:
+            self.imagepathClicked.emit(image_path)
