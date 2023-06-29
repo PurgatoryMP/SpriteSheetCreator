@@ -120,13 +120,25 @@ class SpriteSheetWidget(QWidget):
         sprite_sheet = QPixmap(sprite_sheet_width, sprite_sheet_height)
         sprite_sheet.fill(Qt.transparent)
 
-        painter = QPainter(sprite_sheet)
+        # Create a separate QPixmap for the outline layer
+        outline_layer = QPixmap(sprite_sheet_width, sprite_sheet_height)
+        outline_layer.fill(Qt.transparent)
+        painter = QPainter(outline_layer)
+        painter.setPen(Qt.black)  # Set the pen color to black for the outline
+
+        sprite_painter = QPainter(sprite_sheet)
         x = 0
         y = 0
 
         for image in self.images:
             scaled_image = image.scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
-            painter.drawPixmap(x, y, scaled_image)
+
+            # Draw the outline on the outline layer
+            painter.drawRect(x, y, target_width, target_height)
+
+            # Draw the scaled image on the sprite sheet
+            sprite_painter.drawPixmap(x, y, scaled_image)
+
             x += target_width
 
             if x >= sprite_sheet_width:
@@ -134,8 +146,17 @@ class SpriteSheetWidget(QWidget):
                 y += target_height
 
         painter.end()
+        sprite_painter.end()
 
-        return sprite_sheet
+        # Combine the sprite sheet and the outline layer
+        sprite_sheet_with_outline = QPixmap(sprite_sheet_width, sprite_sheet_height)
+        sprite_sheet_with_outline.fill(Qt.transparent)
+        sprite_sheet_with_outline_painter = QPainter(sprite_sheet_with_outline)
+        sprite_sheet_with_outline_painter.drawPixmap(0, 0, sprite_sheet)
+        sprite_sheet_with_outline_painter.drawPixmap(0, 0, outline_layer)
+        sprite_sheet_with_outline_painter.end()
+
+        return sprite_sheet_with_outline
 
     def display_sprite_sheet(self):
         self.scene.clear()

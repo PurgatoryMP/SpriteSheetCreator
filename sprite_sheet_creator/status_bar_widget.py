@@ -26,10 +26,13 @@ class StatusBar(QStatusBar):
         self.console.append_text("Finished Loading: Status Bar Widget.\n")
 
     def set_mem_usage_text(self, value: str) -> None:
-        self.label1.setText("Memory Usage: {}".format(str(value)))
+        if value:
+            self.label1.setText("Memory Usage: {}".format(str(value)))
 
     def set_total_frame_text(self, value: str) -> None:
-        self.label2.setText(str(value))
+        if value:
+            self.label2.setText(str(value))
 
     def set_state_text(self, value: str) -> None:
-        self.label3.setText(str(value))
+        if value:
+            self.label3.setText(str(value))

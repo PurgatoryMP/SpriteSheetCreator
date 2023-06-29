@@ -3,7 +3,8 @@ import os
 import style_sheet
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap, QTransform, QPainter
-from PyQt5.QtWidgets import QLabel, QVBoxLayout, QScrollArea, QWidget, QGraphicsView, QGraphicsScene
+from PyQt5.QtWidgets import QLabel, QVBoxLayout, QScrollArea, QWidget, QGraphicsView, QGraphicsScene, QPushButton, \
+    QHBoxLayout
 
 
 class ImageViewerWidget(QWidget):
@@ -13,7 +14,7 @@ class ImageViewerWidget(QWidget):
         """Initialize the ImageViewerWidget.
 
         Args:
-            console_widget (QWidget): The console widget for displaying messages.
+            main_console_widget (QWidget): The console widget for displaying messages.
         """
         super().__init__()
 
@@ -25,7 +26,11 @@ class ImageViewerWidget(QWidget):
         self.original_pixmap = None
 
         self.display_name_label = QLabel("File Name:")
-        self.display_name_label.setStyleSheet(style_sheet.bubble_label_style())
+        self.display_name_label.setStyleSheet(style_sheet.folder_path_label_style())
+
+        self.display_name_button = QPushButton("Explore Folder")
+        self.display_name_button.setFixedSize(150, 30)  # Set the width to 80 pixels and height to 30 pixels
+        self.display_name_button.setStyleSheet(style_sheet.explore_folder_btn_style())
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
@@ -43,7 +48,10 @@ class ImageViewerWidget(QWidget):
         self.scroll_area.setWidget(self.view)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self.display_name_label)
+        layout_header = QHBoxLayout()
+        layout_header.addWidget(self.display_name_label)
+        layout_header.addWidget(self.display_name_button)
+        layout.addLayout(layout_header)
         layout.addWidget(self.scroll_area)
 
         self.scale_factor = 1.0
@@ -152,10 +160,14 @@ class ImageViewerWidget(QWidget):
         try:
             if self.display_name_label is not None and file_path:
                 self.display_name_label.setText("{}".format(file_path))
-                self.display_name_label.mousePressEvent = lambda event, path=file_path: self.handle_image_path_click(event, path)
+                self.display_name_button.clicked.connect(lambda: self.handle_image_path_click(file_path))
         except Exception as err:
             self.console.append_text(str(err.args))
 
-    def handle_image_path_click(self, event, image_path):
-        if event.button() == Qt.LeftButton:
+    def handle_image_path_click(self, image_path):
+        try:
             self.imagepathClicked.emit(image_path)
+        except Exception as err:
+            self.console.append_text(str(err.args))
+
+

@@ -1,6 +1,6 @@
 import os
 import sys
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer, QSize
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
 
 from image_viewer_widget import ImageViewerWidget
@@ -13,6 +13,7 @@ from status_bar_widget import StatusBar
 from console_widget import ConsoleWidget
 from importer import ImportExporter
 import style_sheet
+import psutil
 
 
 class MainWindow(QMainWindow):
@@ -39,7 +40,7 @@ class MainWindow(QMainWindow):
         console_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         console_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        # Define the controls so we can add them to the other widgets
+        # Define the controls, so we can add them to the other widgets
         self.control_widget = ControlWidget(self.main_console_widget)
         control_dock_widget = QDockWidget("Controls")
         control_dock_widget.setWidget(self.control_widget)
@@ -74,17 +75,28 @@ class MainWindow(QMainWindow):
         playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         playback_widget_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        # Setup the menu bar
-        menu_bar = MenuBar(self.main_console_widget)
-        menu_bar.import_image_sequence.connect(self.import_image_sequence)
-        menu = menu_bar.create_menu_bar()
+        # # Setup the menu bar
+        self.menu_bar = MenuBar(self.main_console_widget)
+        # Connect the menu bar signal using instance
+        self.menu_bar.importimagesequence.connect(self.import_image_sequence)
+
+        # TODO: Plugin the functions for these menu options
+        # self.menu_bar.importgiffile.connect(self.import_image_sequence)
+        # self.menu_bar.exportgiffile.connect(self.import_image_sequence)
+        # self.menu_bar.convertgiftosequence.connect(self.import_image_sequence)
+        # self.menu_bar.importmp4file.connect(self.import_image_sequence)
+        # self.menu_bar.exportmp4file.connect(self.import_image_sequence)
+        # self.menu_bar.convertmp4tosequence.connect(self.import_image_sequence)
+
+        self.menu_bar.exitapp.connect(self.exit_application)
+
+        # Add the menu bar to the main window
+        menu = self.menu_bar.create_menu_bar()
         self.setMenuBar(menu)
 
         # Set up the status bar
-        self.menu_bar = MenuBar(self.main_console_widget)
-        self.menu_bar.import_image_sequence.connect(self.import_image_sequence)  # Connect the signal using instance
-        menu = self.menu_bar.create_menu_bar()
-        self.setMenuBar(menu)
+        self.statusBar = StatusBar(self.main_console_widget)
+        self.setStatusBar(self.statusBar)
 
         # Connect the controls here
         self.control_widget.fpsValueChanged.connect(self.playback_widget.set_fps_value)
@@ -98,8 +110,9 @@ class MainWindow(QMainWindow):
 
         self.control_widget.playClicked.connect(self.playback_widget.start_playback)
         self.control_widget.stopClicked.connect(self.playback_widget.stop_playback)
-        # self.image_sequence_widget.imageClicked.connect(self.barf)
         self.image_sequence_widget.imageClicked.connect(self.handle_image_clicked)
+
+        self.image_viewer_widget.imagepathClicked.connect(self.open_file_path)
 
         # add the widgets to the main window.
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, image_sequence_dock_widget)
@@ -109,7 +122,23 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, sprite_sheet_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, console_dock_widget)
 
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.get_memory_usage)
+        self.timer.start(1000)
+
+        self.resize_timer = QTimer()
+        self.resize_timer.setInterval(500)  # Set the delay in milliseconds
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.report_size)
+
         self.main_console_widget.append_text("Finished loading widgets.\n")
+
+    def open_file_path(self, file_path):
+        if file_path:
+            directory = os.path.dirname(file_path)
+            if directory:
+                os.startfile(directory)
+
 
     def handle_image_clicked(self, image_path):
         try:
@@ -119,10 +148,16 @@ class MainWindow(QMainWindow):
             self.main_console_widget.append_text(str(err.args))
 
     def handle_image_path_clicked(self, image_path):
-        os.startfile(image_path)
+        if image_path:
+            try:
+                os.startfile(image_path)
+            except Exception as err:
+                self.main_console_widget.append_text(str(err.args))
 
     def import_image_sequence(self):
         # Implement the logic to import the image sequence here
+        # Populate the widgets with the images contained in the selected directory
+
         importer = ImportExporter(self.main_console_widget)
 
         self.image_sequence = importer.import_image_sequence()
@@ -139,6 +174,43 @@ class MainWindow(QMainWindow):
 
         self.sprite_sheet_widget.load_images(self.image_sequence)
         self.main_console_widget.append_text("sprite_sheet_widget Loaded.")
+
+    def get_memory_usage(self):
+        try:
+            # Get the current process ID
+            pid = psutil.Process()
+
+            # Get the memory information
+            memory_info = pid.memory_full_info()
+
+            # Memory usage in bytes
+            memory_usage = memory_info.uss
+
+            # Convert to a human-readable format
+            memory_usage_readable = psutil._common.bytes2human(memory_usage)
+
+            # Display memory usage
+            self.statusBar.set_mem_usage_text(str(memory_usage_readable))
+        except Exception as err:
+            self.main_console_widget.append_text(str(err.args))
+
+    def resizeEvent(self, event):
+        # Call the base class resizeEvent method
+        super().resizeEvent(event)
+        # Start or restart the resize timer
+        self.resize_timer.start()
+
+    def report_size(self):
+        # Get the new size of the main window
+        # new_size = self.size()
+        # print(f"New size: {new_size.width()} x {new_size.height()}")
+
+        # After the window has been resized, fit the images to the new widget size.
+        self.sprite_sheet_widget.fit_to_widget()
+        self.image_viewer_widget.fit_to_widget()
+
+    def exit_application(self):
+        self.close()
 
 
 if __name__ == "__main__":

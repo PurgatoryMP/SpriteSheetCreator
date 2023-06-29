@@ -32,9 +32,10 @@ class PlaybackWidget(QWidget):
     def load_image_sequence(self, image_sequence_list):
         if image_sequence_list:
             for file_path in image_sequence_list:
-                self.console.append_text("Loading Image: {}".format(file_path))
+                self.console.append_text("Playback Widget: Loading Image: {}".format(file_path))
                 self.image_list.append(QImage(file_path))
-                self.start_playback()
+            # start the playback after the image sequence is done loading.
+            self.start_playback()
 
     def setup_ui(self):
         layout = QVBoxLayout(self)

@@ -231,6 +231,43 @@ def stop_btn_style():
     """
     return style_sheet
 
+def explore_folder_btn_style():
+    style_sheet = """
+        QPushButton {
+            background-color: #4772B3;
+            color: White;
+            border: 1px solid Black;
+            font-size: 14px;
+            border-radius: 8px;
+            padding: 6;
+        }
+
+        QPushButton:hover {
+            background-color: #5284d1;
+            color: White;
+        }
+
+        QPushButton:pressed {
+            background-color: #39619e;
+            color: White;
+        }
+    """
+    return style_sheet
+
+def folder_path_label_style():
+    style_sheet = """
+            QLabel {
+                background-color: #434D4F;
+                color: White;
+                font-size: 14px;
+                border: 1px solid Black;
+                border-radius: 8px;
+                padding: 4px;
+
+            }
+        """
+    return style_sheet
+
 def console_style():
     style_sheet = """
         QTextEdit {
