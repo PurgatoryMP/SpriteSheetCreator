@@ -1,9 +1,8 @@
-import os
-import style_sheet
-
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QPainter, QTransform
 from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout, QScrollArea
+
+import style_sheet
 
 
 class SpriteSheetWidget(QWidget):
@@ -15,7 +14,7 @@ class SpriteSheetWidget(QWidget):
         self.console = main_console_widget
         self.control = control_widget
 
-        self.console.append_text("Loading: Sprite Sheet Widget.\n")
+        self.console.append_text("INFO: Loading Sprite Sheet Widget.----------------")
 
         self.image_sequence = []
 
@@ -50,7 +49,7 @@ class SpriteSheetWidget(QWidget):
         # Enable mouse tracking to receive mouse wheel events
         self.view.setMouseTracking(True)
 
-        self.console.append_text("Finished Loading: Sprite Sheet Widget.\n")
+        self.console.append_text("INFO: Finished Loading Sprite Sheet Widget.")
 
     def load_images(self, sequence: list):
         """Loads the provided image sequence.
@@ -73,7 +72,7 @@ class SpriteSheetWidget(QWidget):
                     # Display the sprite sheet
                     self.display_sprite_sheet()
         except Exception as err:
-            self.console.append_text(str(err.args))
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def update_sprite_sheet(self) -> None:
         try:
@@ -91,7 +90,7 @@ class SpriteSheetWidget(QWidget):
                     self.display_sprite_sheet()
                     self.fit_to_widget()
         except Exception as err:
-            self.console.append_text(str(err.args))
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def calculate_rows_columns(self):
         # total_images = len(self.images)
@@ -108,55 +107,58 @@ class SpriteSheetWidget(QWidget):
         return rows, columns
 
     def create_sprite_sheet(self):
-        sprite_sheet_width = self.control.get_image_width_value()
-        sprite_sheet_height = self.control.get_image_height_value()
+        try:
+            sprite_sheet_width = self.control.get_image_width_value()
+            sprite_sheet_height = self.control.get_image_height_value()
 
-        rows, columns = self.calculate_rows_columns()
+            rows, columns = self.calculate_rows_columns()
 
-        # Calculate the target width and height for each image
-        target_width = sprite_sheet_width // columns
-        target_height = sprite_sheet_height // rows
+            # Calculate the target width and height for each image
+            target_width = sprite_sheet_width // columns
+            target_height = sprite_sheet_height // rows
 
-        sprite_sheet = QPixmap(sprite_sheet_width, sprite_sheet_height)
-        sprite_sheet.fill(Qt.transparent)
+            sprite_sheet = QPixmap(sprite_sheet_width, sprite_sheet_height)
+            sprite_sheet.fill(Qt.transparent)
 
-        # Create a separate QPixmap for the outline layer
-        outline_layer = QPixmap(sprite_sheet_width, sprite_sheet_height)
-        outline_layer.fill(Qt.transparent)
-        painter = QPainter(outline_layer)
-        painter.setPen(Qt.black)  # Set the pen color to black for the outline
+            # Create a separate QPixmap for the outline layer
+            outline_layer = QPixmap(sprite_sheet_width, sprite_sheet_height)
+            outline_layer.fill(Qt.transparent)
+            painter = QPainter(outline_layer)
+            painter.setPen(Qt.black)  # Set the pen color to black for the outline
 
-        sprite_painter = QPainter(sprite_sheet)
-        x = 0
-        y = 0
+            sprite_painter = QPainter(sprite_sheet)
+            x = 0
+            y = 0
 
-        for image in self.images:
-            scaled_image = image.scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
+            for image in self.images:
+                scaled_image = image.scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
 
-            # Draw the outline on the outline layer
-            painter.drawRect(x, y, target_width, target_height)
+                # Draw the outline on the outline layer
+                painter.drawRect(x, y, target_width, target_height)
 
-            # Draw the scaled image on the sprite sheet
-            sprite_painter.drawPixmap(x, y, scaled_image)
+                # Draw the scaled image on the sprite sheet
+                sprite_painter.drawPixmap(x, y, scaled_image)
 
-            x += target_width
+                x += target_width
 
-            if x >= sprite_sheet_width:
-                x = 0
-                y += target_height
+                if x >= sprite_sheet_width:
+                    x = 0
+                    y += target_height
 
-        painter.end()
-        sprite_painter.end()
+            painter.end()
+            sprite_painter.end()
 
-        # Combine the sprite sheet and the outline layer
-        sprite_sheet_with_outline = QPixmap(sprite_sheet_width, sprite_sheet_height)
-        sprite_sheet_with_outline.fill(Qt.transparent)
-        sprite_sheet_with_outline_painter = QPainter(sprite_sheet_with_outline)
-        sprite_sheet_with_outline_painter.drawPixmap(0, 0, sprite_sheet)
-        sprite_sheet_with_outline_painter.drawPixmap(0, 0, outline_layer)
-        sprite_sheet_with_outline_painter.end()
+            # Combine the sprite sheet and the outline layer
+            sprite_sheet_with_outline = QPixmap(sprite_sheet_width, sprite_sheet_height)
+            sprite_sheet_with_outline.fill(Qt.transparent)
+            sprite_sheet_with_outline_painter = QPainter(sprite_sheet_with_outline)
+            sprite_sheet_with_outline_painter.drawPixmap(0, 0, sprite_sheet)
+            sprite_sheet_with_outline_painter.drawPixmap(0, 0, outline_layer)
+            sprite_sheet_with_outline_painter.end()
 
-        return sprite_sheet_with_outline
+            return sprite_sheet_with_outline
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def display_sprite_sheet(self):
         self.scene.clear()
@@ -164,35 +166,44 @@ class SpriteSheetWidget(QWidget):
         self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
 
     def wheelEvent(self, event):
-        if event.modifiers() == Qt.ControlModifier:
-            # Only zoom when the Ctrl key is pressed
-            scroll_delta = event.angleDelta().y()
-            zoom_factor = 1.1 if scroll_delta > 0 else 0.9
+        try:
+            if event.modifiers() == Qt.ControlModifier:
+                # Only zoom when the Ctrl key is pressed
+                scroll_delta = event.angleDelta().y()
+                zoom_factor = 1.1 if scroll_delta > 0 else 0.9
 
-            cursor_pos = event.pos()
-            scroll_pos = self.view.mapToScene(cursor_pos)
+                cursor_pos = event.pos()
+                scroll_pos = self.view.mapToScene(cursor_pos)
 
-            self.zoom_image(zoom_factor, scroll_pos)
+                self.zoom_image(zoom_factor, scroll_pos)
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def zoom_image(self, zoom_factor, scroll_pos):
-        old_pos = self.view.mapToScene(self.view.viewport().rect().center())
+        try:
+            old_pos = self.view.mapToScene(self.view.viewport().rect().center())
 
-        self.scale_factor *= zoom_factor
-        if self.scale_factor < self.min_scale_factor:
-            self.scale_factor = self.min_scale_factor
-        elif self.scale_factor > self.max_scale_factor:
-            self.scale_factor = self.max_scale_factor
+            self.scale_factor *= zoom_factor
+            if self.scale_factor < self.min_scale_factor:
+                self.scale_factor = self.min_scale_factor
+            elif self.scale_factor > self.max_scale_factor:
+                self.scale_factor = self.max_scale_factor
 
-        self.view.setTransform(QTransform().scale(self.scale_factor, self.scale_factor))
-        new_pos = self.view.mapToScene(self.view.viewport().rect().center())
+            self.view.setTransform(QTransform().scale(self.scale_factor, self.scale_factor))
+            new_pos = self.view.mapToScene(self.view.viewport().rect().center())
 
-        scroll_adjustment = new_pos - old_pos
-        self.view.horizontalScrollBar().setValue(
-            int(self.view.horizontalScrollBar().value()) + int(scroll_adjustment.x())
-        )
-        self.view.verticalScrollBar().setValue(
-            int(self.view.verticalScrollBar().value()) + int(scroll_adjustment.y())
-        )
+            scroll_adjustment = new_pos - old_pos
+            self.view.horizontalScrollBar().setValue(
+                int(self.view.horizontalScrollBar().value()) + int(scroll_adjustment.x())
+            )
+            self.view.verticalScrollBar().setValue(
+                int(self.view.verticalScrollBar().value()) + int(scroll_adjustment.y())
+            )
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def fit_to_widget(self):
-        self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
+        try:
+            self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))

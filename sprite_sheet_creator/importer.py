@@ -9,10 +9,12 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 
 
 class ImportExporter():
-    def __init__(self, console_widget):
-        self.console = console_widget
-        self.console.append_text("Loading: Import/Exporter functions.")
+    def __init__(self, main_console_widget):
+        self.console = main_console_widget
+        self.console.append_text("INFO: Loading Import/Exporter functions.----------------")
         self.image_sequence = []
+
+        self.console.append_text("INFO: Finished Loading Import/Exporter functions.")
 
 
     def import_image_sequence(self) -> list:
@@ -23,8 +25,9 @@ class ImportExporter():
             # Open file dialog to select directory
             directory = QFileDialog.getExistingDirectory()
             if directory:
-                # Retrieve image files from the selected directory
-                self.image_sequence = sorted([os.path.join(directory, filename) for filename in os.listdir(directory)], key=os.path.getctime)
+                # Retrieve image files from the selected directory and sort them by creation time.
+                # This keeps the frames in the correct order regardless of name.
+                self.image_sequence = sorted([str(os.path.join(directory, filename)).replace("\\", "/") for filename in os.listdir(directory)], key=os.path.getctime)
                 return self.image_sequence
         except Exception as err:
             self.console.append_text(str(err.args))

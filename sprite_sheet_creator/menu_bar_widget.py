@@ -3,8 +3,6 @@ from PyQt5.QtWidgets import QMenuBar, QAction
 
 import style_sheet
 
-from importer import ImportExporter
-
 
 class MenuBar(QMenuBar):
     importimagesequence = pyqtSignal()
@@ -21,11 +19,7 @@ class MenuBar(QMenuBar):
 
         # Add the console widget.
         self.console = main_console_widget
-        self.console.append_text("Loading: Menu Bar Widget.")
-
-        # self.image_sequence = []
-        # self.importer = ImportExporter(main_console_widget)
-
+        self.console.append_text("INFO: Loading Menu Bar Widget.----------------")
         self.create_menu_bar()
 
     def create_menu_bar(self):
@@ -66,6 +60,8 @@ class MenuBar(QMenuBar):
         file_menu.addSeparator()
         file_menu.addAction(self.exit_action)
         file_menu.setStyleSheet(style_sheet.menu_bar_style())
+
+        self.console.append_text("INFO: Finished Loading Menu Bar Widget.")
 
         return menubar
 

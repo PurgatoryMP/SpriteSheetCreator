@@ -37,7 +37,7 @@ class ControlWidget(QWidget):
     playClicked = pyqtSignal()
     stopClicked = pyqtSignal()
 
-    def __init__(self, console_widget):
+    def __init__(self, main_console_widget):
         """Initialize the ControlWidget.
 
         Args:
@@ -45,8 +45,8 @@ class ControlWidget(QWidget):
         """
         super().__init__()
 
-        self.console = console_widget
-        self.console.append_text("Loading: Controls Widget.\n")
+        self.console = main_console_widget
+        self.console.append_text("INFO: Loading Controls Widget.----------------")
 
         # Set up the play button controls.
         play_button = QPushButton("Play")
@@ -60,6 +60,7 @@ class ControlWidget(QWidget):
         start_frame_label = QLabel("Start Frame:")
         start_frame_label.setStyleSheet(style_sheet.bubble_label_style())
         self.start_frame_input = QSpinBox()
+        self.start_frame_input.setRange(0, 9999)
         self.start_frame_input.setStyleSheet(style_sheet.spinbox_style())
         # set the initial value for the start frame to 0
         self.start_frame_input.setValue(0)
@@ -68,26 +69,30 @@ class ControlWidget(QWidget):
         end_frame_label = QLabel("End Frame:")
         end_frame_label.setStyleSheet(style_sheet.bubble_label_style())
         self.end_frame_input = QSpinBox()
+        self.end_frame_input.setRange(0, 9999)
         self.end_frame_input.setStyleSheet(style_sheet.spinbox_style())
 
         # Set up the FPS controls.
         fps_label = QLabel("Playback FPS:")
         fps_label.setStyleSheet(style_sheet.bubble_label_style())
         self.fps_input = QSpinBox()
+        self.fps_input.setRange(0, 128)
         self.fps_input.setStyleSheet(style_sheet.spinbox_style())
         # set the initial value for the fps to 30
-        self.fps_input.setValue(30)
+        self.fps_input.setValue(24)
 
         # Set up the image grid controls.
         grid_rows_label = QLabel("Grid Rows:")
         grid_rows_label.setStyleSheet(style_sheet.bubble_label_style())
         self.grid_rows_input = QSpinBox()
+        self.grid_rows_input.setRange(2, 128)
         self.grid_rows_input.setStyleSheet(style_sheet.spinbox_style())
         self.grid_rows_input.setValue(8)
 
         grid_columns_label = QLabel("Grid Columns:")
         grid_columns_label.setStyleSheet(style_sheet.bubble_label_style())
         self.grid_columns_input = QSpinBox()
+        self.grid_columns_input.setRange(2, 128)
         self.grid_columns_input.setStyleSheet(style_sheet.spinbox_style())
         self.grid_columns_input.setValue(8)
 
@@ -111,9 +116,17 @@ class ControlWidget(QWidget):
         frame_number_label = QLabel("Frame Number:")
         frame_number_label.setStyleSheet(style_sheet.bubble_label_style())
         self.frame_number_display = QSpinBox()
+        self.frame_number_display.setRange(0, 9999)
         self.frame_number_display.setStyleSheet(style_sheet.spinbox_style())
         # set the initial value for the Frame Number to 0
         self.frame_number_display.setValue(0)
+
+        self.console.append_text("INFO: Control Settings:-------------")
+        self.console.append_text("INFO: FPS = 24")
+        self.console.append_text("INFO: Grid Rows = 8")
+        self.console.append_text("INFO: Grid Columns = 8")
+        self.console.append_text("INFO: sprite sheet width = 2048")
+        self.console.append_text("INFO: sprite sheet height = 2048")
 
         separator1 = QLabel("Playback:")
         separator1.setStyleSheet(style_sheet.seperator_label_style())
@@ -189,7 +202,7 @@ class ControlWidget(QWidget):
         play_button.clicked.connect(self.playClicked.emit)
         stop_button.clicked.connect(self.stopClicked.emit)
 
-        self.console.append_text("Finished Loading: Controls Widget.\n")
+        self.console.append_text("INFO: Finished Loading Controls Widget.")
 
     def update_frame_number(self, value: int):
         """Update the frame number display.

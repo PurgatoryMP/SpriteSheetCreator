@@ -9,10 +9,10 @@ import style_sheet
 class ImageSequenceWidget(QWidget):
     imageClicked = pyqtSignal(str)
 
-    def __init__(self, control_widget, console_widget):
+    def __init__(self, control_widget, main_console_widget):
         super().__init__()
-        self.console = console_widget
-        self.console.append_text("Loading: Image Sequence Widget.\n")
+        self.console = main_console_widget
+        self.console.append_text("INFO: Loading Image Sequence Widget.----------------")
 
         self.start_frame = control_widget.get_start_frame_value()
         self.end_frame = control_widget.get_end_frame_value()
@@ -35,7 +35,7 @@ class ImageSequenceWidget(QWidget):
 
         self.setLayout(self.main_layout)
 
-        self.console.append_text("Finished Loading Image Sequence Widget.\n")
+        self.console.append_text("INFO: Finished Loading Image Sequence Widget.")
 
     def load_sequence(self, image_sequence_list):
         try:
@@ -48,7 +48,7 @@ class ImageSequenceWidget(QWidget):
             # Load new image sequence
             if image_sequence_list:
                 for image_path in image_sequence_list:
-                    self.console.append_text("Loading Image: {}".format(image_path))
+                    self.console.append_text("INFO: Adding Image to grid: {}".format(image_path))
                     image_widget = QWidget()
                     image_layout = QVBoxLayout(image_widget)
 

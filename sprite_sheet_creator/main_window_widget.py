@@ -1,19 +1,20 @@
 import os
 import sys
-from PyQt5.QtCore import Qt, QTimer, QSize
+
+import psutil
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
 
-from image_viewer_widget import ImageViewerWidget
-from menu_bar_widget import MenuBar
+import style_sheet
+from console_widget import ConsoleWidget
 from controls_widget import ControlWidget
-from playback_widget import PlaybackWidget
 from image_grid_widget import ImageSequenceWidget
+from image_viewer_widget import ImageViewerWidget
+from importer import ImportExporter
+from menu_bar_widget import MenuBar
+from playback_widget import PlaybackWidget
 from sprite_sheet_widget import SpriteSheetWidget
 from status_bar_widget import StatusBar
-from console_widget import ConsoleWidget
-from importer import ImportExporter
-import style_sheet
-import psutil
 
 
 class MainWindow(QMainWindow):
@@ -33,12 +34,19 @@ class MainWindow(QMainWindow):
         self.setDockOptions(QMainWindow.AllowTabbedDocks |
                             QMainWindow.AllowNestedDocks)
 
+        # Set up the status bar
+        self.statusBar = StatusBar()
+        self.setStatusBar(self.statusBar)
+
         # Define the console first so we can print out messages to it while loading other widgets.
         self.main_console_widget = ConsoleWidget()
         console_dock_widget = QDockWidget("Console")
         console_dock_widget.setWidget(self.main_console_widget)
         console_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         console_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+
+        # Display the application information in the console before anything else.
+        self.main_console_widget.append_text("Super Sprite\nVersion: 1.0.0\n\n")
 
         # Define the controls, so we can add them to the other widgets
         self.control_widget = ControlWidget(self.main_console_widget)
@@ -69,7 +77,7 @@ class MainWindow(QMainWindow):
         sprite_sheet_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         sprite_sheet_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        self.playback_widget = PlaybackWidget(self.main_console_widget, self.control_widget)
+        self.playback_widget = PlaybackWidget(self.main_console_widget, self.control_widget, self.statusBar)
         playback_widget_dock_widget = QDockWidget("Playback")
         playback_widget_dock_widget.setWidget(self.playback_widget)
         playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
@@ -94,9 +102,6 @@ class MainWindow(QMainWindow):
         menu = self.menu_bar.create_menu_bar()
         self.setMenuBar(menu)
 
-        # Set up the status bar
-        self.statusBar = StatusBar(self.main_console_widget)
-        self.setStatusBar(self.statusBar)
 
         # Connect the controls here
         self.control_widget.fpsValueChanged.connect(self.playback_widget.set_fps_value)
@@ -109,7 +114,9 @@ class MainWindow(QMainWindow):
         self.control_widget.imageheightValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
 
         self.control_widget.playClicked.connect(self.playback_widget.start_playback)
+        # self.control_widget.playClicked.connect(self.set_status_text("Playing Sequence"))
         self.control_widget.stopClicked.connect(self.playback_widget.stop_playback)
+        # self.control_widget.stopClicked.connect(self.set_status_text("Playback Stopped"))
         self.image_sequence_widget.imageClicked.connect(self.handle_image_clicked)
 
         self.image_viewer_widget.imagepathClicked.connect(self.open_file_path)
@@ -122,23 +129,25 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, sprite_sheet_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, console_dock_widget)
 
+        # Add a timer to control the playback.
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.get_memory_usage)
         self.timer.start(1000)
 
+        # Add a timer with a delay so the images are resized to fit the widget after you release the resize control.
         self.resize_timer = QTimer()
         self.resize_timer.setInterval(500)  # Set the delay in milliseconds
         self.resize_timer.setSingleShot(True)
         self.resize_timer.timeout.connect(self.report_size)
 
-        self.main_console_widget.append_text("Finished loading widgets.\n")
+        self.main_console_widget.append_text("INFO: Finished loading all widgets.\n")
+
 
     def open_file_path(self, file_path):
         if file_path:
             directory = os.path.dirname(file_path)
             if directory:
                 os.startfile(directory)
-
 
     def handle_image_clicked(self, image_path):
         try:
@@ -159,8 +168,10 @@ class MainWindow(QMainWindow):
         # Populate the widgets with the images contained in the selected directory
 
         importer = ImportExporter(self.main_console_widget)
-
         self.image_sequence = importer.import_image_sequence()
+
+        self.statusBar.set_total_frame_text(str(len(self.image_sequence)))
+
         self.main_console_widget.append_text("image_sequence Loaded.")
 
         self.image_sequence_widget.load_sequence(self.image_sequence)

@@ -115,7 +115,7 @@ def graphics_scene_style():
 
     style_sheet = """
         QGraphicsView {
-        background-color: #333333;
+        background-color: #3D3D3D;
         }
         
         QGraphicsView:hover {

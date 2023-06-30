@@ -1,17 +1,19 @@
-import os
-
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QTransform
 from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QScrollArea
+import style_sheet
 
 
 class PlaybackWidget(QWidget):
-    def __init__(self, main_console_widget, control_widget, parent=None):
+    def __init__(self, main_console_widget, control_widget, status_bar, parent=None):
         super(PlaybackWidget, self).__init__(parent)
         self.console = main_console_widget
-        self.console.append_text("Loading: Playback Widget.\n")
+        self.console.append_text("INFO: Loading Playback Widget.----------------")
 
-        self.image_list = []
+        self.status = status_bar
+        self.status.set_status_text("N/A")
+
+        self.image_sequence = []
         self.current_frame = 0
         self.zoom_factor = 1.0
         self.zoom_origin = None
@@ -19,23 +21,23 @@ class PlaybackWidget(QWidget):
         self.dragging = False
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.update_frame)
-        self.image_sequence = []
         self.setup_ui()
 
         self.control = control_widget
         self.control.update_frame_number(self.current_frame)
-
-        self.console.append_text(str(self.control.get_fps_value()))
-
-        self.console.append_text("Finished Loading: Playback Widget.\n")
+        self.console.append_text("INFO: Finished loading Playback Widget.")
 
     def load_image_sequence(self, image_sequence_list):
-        if image_sequence_list:
-            for file_path in image_sequence_list:
-                self.console.append_text("Playback Widget: Loading Image: {}".format(file_path))
-                self.image_list.append(QImage(file_path))
-            # start the playback after the image sequence is done loading.
-            self.start_playback()
+        try:
+            self.image_sequence = []
+            if image_sequence_list:
+                for file_path in image_sequence_list:
+                    self.console.append_text("INFO: Playback Widget: Loading Image: {}".format(file_path))
+                    self.image_sequence.append(QImage(file_path))
+                # start the playback after the image sequence is done loading.
+                self.start_playback()
+        except Exception as err:
+            self.console.append_text(str(err.args))
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
@@ -43,19 +45,22 @@ class PlaybackWidget(QWidget):
         layout.addWidget(self.label)
 
         scroll_area = QScrollArea(self)
+        scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(self.label)
 
         layout.addWidget(scroll_area)
 
     def start_playback(self):
-        if self.image_list:
+        if self.image_sequence:
             self.timer.start(1000 / self.control.get_fps_value())  # 30 frames per second
-            self.console.append_text("Playback Started.")
+            self.console.append_text("INFO: Playback Started.")
+            self.status.set_status_text("Playing Sequence.")
 
     def stop_playback(self):
         self.timer.stop()
-        self.console.append_text("Playback Stopped.")
+        self.console.append_text("INFO: Playback Stopped.")
+        self.status.set_status_text("Playback Stopped.")
 
     def set_fps_value(self, value: int) -> None:
         """Sets the playback frame rate.
@@ -64,15 +69,15 @@ class PlaybackWidget(QWidget):
             value: (str): The integer value to apply to the playback fps.
         """
         self.stop_playback()
-        self.console.append_text("Playback FPS changed to {}".format(value))
+        self.console.append_text("INFO: FPS set to: {}".format(value))
         if value:
             self.timer.setInterval(1000 / value)
             self.start_playback()
 
     def update_frame(self):
-        if self.current_frame >= len(self.image_list):
+        if self.current_frame >= len(self.image_sequence):
             self.current_frame = 0
-        image = self.image_list[self.current_frame]
+        image = self.image_sequence[self.current_frame]
         pixmap = QPixmap.fromImage(image)
         self.label.setPixmap(self.zoomed_pixmap(pixmap))
         self.current_frame += 1
@@ -92,7 +97,7 @@ class PlaybackWidget(QWidget):
                 cursor_pos = self.label.mapFromGlobal(event.globalPos())
                 self.zoom_origin = cursor_pos
 
-                image = self.image_list[self.current_frame]
+                image = self.image_sequence[self.current_frame]
                 pixmap = QPixmap.fromImage(image)
                 self.label.setPixmap(self.zoomed_pixmap(pixmap))
         except Exception as err:
