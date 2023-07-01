@@ -70,6 +70,12 @@ class ConsoleWidget(QWidget):
             'OSError': QColor('red'),
             'RuntimeError': QColor('red'),
             'SystemExit': QColor('red'),
+            'ValueWarning': QColor('orange'),
+            'PermissionError': QColor('purple'),
+            'SyntaxWarning': QColor('yellow'),
+            'RuntimeWarning': QColor('pink'),
+            'UserWarning': QColor('green'),
+            'PendingDeprecationWarning': QColor('brown'),
         }
 
         for word, color in color_formats.items():

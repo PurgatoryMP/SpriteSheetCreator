@@ -1,89 +1,42 @@
 import os
 import tempfile
 
-from PyQt5.QtCore import QPoint
-
-from PyQt5.QtGui import QPixmap, QPainter, QColor, QPolygon, QImage
+from PyQt5.QtGui import QColor, QImage
 
 
-def create_checker_pattern(width: int, height: int, square_size: int) -> str:
-    """
-    Create a checker pattern image.
+class ImageGenerator():
+    def __init__(self):
 
-    Args:
-        width (int): The width of the image.
-        height (int): The height of the image.
-        square_size (int): The size of each square in pixels.
+        # Define the temp file directory so its easy to clean up temp files when done.
+        self.temp_directory = "{}\{}".format(tempfile.gettempdir(), "SuperSpriteTemp")
+        if not os.path.exists(self.temp_directory):
+            os.mkdir(self.temp_directory)
 
-    Returns:
-        str: The file path of the generated checker pattern image.
-    """
-    try:
-        image = QImage(width, height, QImage.Format_RGBA8888)
-        color1 = QColor(50, 50, 50, 255)  # Dark grey color
-        color2 = QColor(50, 50, 50, 0)  # Transparent color
+        self.checker_alpha_save_path = "{}\{}".format(self.temp_directory, "Checkered_Alpha.png")
 
-        for y in range(height):
-            for x in range(width):
-                if (x // square_size) % 2 == (y // square_size) % 2:
-                    image.setPixelColor(x, y, color1)
-                else:
-                    image.setPixelColor(x, y, color2)
+    def get_checker_pattern(self) -> str:
+        try:
+            path = self.checker_alpha_save_path
+            if not os.path.exists(path):
+                self.create_checker_pattern(256, 256, 8)
+                return path
+            else:
+                return path
+        except Exception as err:
+            print(str(err.args))
 
-        # Save the image to a temporary file.
-        temp_file_path = tempfile.mktemp(suffix='.png')
-        image.save(temp_file_path)
+    def create_checker_pattern(self, width: int, height: int, square_size: int) -> None:
+        try:
+            image = QImage(width, height, QImage.Format_RGBA8888)
+            color1 = QColor(50, 50, 50, 255)  # Dark grey color
+            color2 = QColor(50, 50, 50, 0)  # Transparent color
 
-        # convert the path.
-        image_path = temp_file_path.replace("\\", "/")
-
-        return image_path
-    except Exception as err:
-        self.debug(str(err.args))
-
-
-def generate_arrow_image():
-    try:
-        temp_file_path = os.path.join(tempfile.gettempdir(), 'arrow_image.png')
-        if os.path.exists(temp_file_path):
-            return temp_file_path
-        else:
-
-            # Create a QPixmap with a transparent background
-            pixmap = QPixmap(16, 16)
-            pixmap.fill(QColor(0, 0, 0, 0))  # Transparent color
-
-            # Create a QPainter to draw on the QPixmap
-            painter = QPainter(pixmap)
-            painter.setRenderHint(QPainter.Antialiasing)
-
-            # Define the arrow shape as a polygon
-            arrow_polygon = QPolygon([
-                QPoint(6, 4),
-                QPoint(6, 12),
-                QPoint(2, 8)
-            ])
-
-            # Set the pen and brush for drawing the arrow
-            painter.setPen(QColor(0, 0, 0))  # Black pen color
-            painter.setBrush(QColor(0, 0, 0))  # Black brush color
-
-            # Draw the arrow polygon
-            painter.drawPolygon(arrow_polygon)
-
-            # Finish painting
-            painter.end()
-
-            # Convert the QPixmap to QImage
-            image = pixmap.toImage()
-
-            # Save the QImage to a temporary file
-            temp_file_path = os.path.join(tempfile.gettempdir(), 'arrow_image.png')
-
-            image.save(temp_file_path)
-            temp_file_path = temp_file_path.replace("\\", "/")
-
-            return temp_file_path
-
-    except Exception as err:
-        print(err.args)
+            for y in range(height):
+                for x in range(width):
+                    if (x // square_size) % 2 == (y // square_size) % 2:
+                        image.setPixelColor(x, y, color1)
+                    else:
+                        image.setPixelColor(x, y, color2)
+                image.save(self.checker_alpha_save_path)
+        except Exception as err:
+            print(err.args)

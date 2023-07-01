@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QLabel, QSpinBox, QHBoxLayout, QPushButton, QVBoxLayout, QWidget, QScrollArea, \
-    QFrame
+    QFrame, QCheckBox
 
 import style_sheet
 
@@ -28,6 +28,7 @@ class ControlWidget(QWidget):
         """
 
     fpsValueChanged = pyqtSignal(int)
+    displayframeChanged = pyqtSignal(int)
     startframeValueChanged = pyqtSignal(int)
     endframeValueChanged = pyqtSignal(int)
     gridrowValueChanged = pyqtSignal(int)
@@ -36,6 +37,7 @@ class ControlWidget(QWidget):
     imageheightValueChanged = pyqtSignal(int)
     playClicked = pyqtSignal()
     stopClicked = pyqtSignal()
+    checkboxStateChanged = pyqtSignal(bool)
 
     def __init__(self, main_console_widget):
         """Initialize the ControlWidget.
@@ -85,14 +87,14 @@ class ControlWidget(QWidget):
         grid_rows_label = QLabel("Grid Rows:")
         grid_rows_label.setStyleSheet(style_sheet.bubble_label_style())
         self.grid_rows_input = QSpinBox()
-        self.grid_rows_input.setRange(2, 128)
+        self.grid_rows_input.setRange(0, 9999)
         self.grid_rows_input.setStyleSheet(style_sheet.spinbox_style())
         self.grid_rows_input.setValue(8)
 
         grid_columns_label = QLabel("Grid Columns:")
         grid_columns_label.setStyleSheet(style_sheet.bubble_label_style())
         self.grid_columns_input = QSpinBox()
-        self.grid_columns_input.setRange(2, 128)
+        self.grid_columns_input.setRange(0, 9999)
         self.grid_columns_input.setStyleSheet(style_sheet.spinbox_style())
         self.grid_columns_input.setValue(8)
 
@@ -120,6 +122,9 @@ class ControlWidget(QWidget):
         self.frame_number_display.setStyleSheet(style_sheet.spinbox_style())
         # set the initial value for the Frame Number to 0
         self.frame_number_display.setValue(0)
+
+        self.checkbox = QCheckBox("Check me")
+
 
         self.console.append_text("INFO: Control Settings:-------------")
         self.console.append_text("INFO: FPS = 24")
@@ -161,6 +166,7 @@ class ControlWidget(QWidget):
             (start_frame_label, self.start_frame_input),
             (end_frame_label, self.end_frame_input),
             (separator5, separator6),
+            (self.checkbox, separator6),
             (grid_rows_label, self.grid_rows_input),
             (grid_columns_label, self.grid_columns_input),
             (image_width_label, self.image_width_input),
@@ -190,15 +196,16 @@ class ControlWidget(QWidget):
         self.setLayout(QVBoxLayout())
         self.layout().addWidget(scroll_area)
 
+        # Connect the controls
         self.fps_input.valueChanged.connect(self.fpsValueChanged.emit)
+        self.frame_number_display.valueChanged.connect(self.displayframeChanged.emit)
         self.start_frame_input.valueChanged.connect(self.startframeValueChanged.emit)
         self.end_frame_input.valueChanged.connect(self.endframeValueChanged.emit)
         self.grid_rows_input.valueChanged.connect(self.gridrowValueChanged.emit)
         self.grid_columns_input.valueChanged.connect(self.gridcolumnValueChanged.emit)
-
         self.image_width_input.valueChanged.connect(self.imagewidthValueChanged.emit)
         self.image_height_input.valueChanged.connect(self.imageheightValueChanged.emit)
-
+        self.checkbox.stateChanged.connect(self.checkboxStateChanged.emit)
         play_button.clicked.connect(self.playClicked.emit)
         stop_button.clicked.connect(self.stopClicked.emit)
 
@@ -230,6 +237,23 @@ class ControlWidget(QWidget):
             value: The new FPS value.
         """
         self.fps_input.setValue(value)
+
+    def set_display_value(self, value):
+        """Set the frame number display value.
+
+        Args:
+            value: The new frame number display value.
+        """
+        self.frame_number_display.setValue(value)
+
+    def get_display_value(self):
+        """Get the frame number display value.
+
+        Returns:
+            int: The new frame number display value.
+        """
+        value = self.frame_number_display.value()
+        return value
 
     def get_start_frame_value(self) -> int:
         """Get the current start frame value.
@@ -274,7 +298,7 @@ class ControlWidget(QWidget):
         value = self.grid_rows_input.value()
         return value
 
-    def set_grid_row_value(self, value: int) -> None:
+    def set_grid_rows_value(self, value: int) -> None:
         """Set the grid rows value.
 
         Args:

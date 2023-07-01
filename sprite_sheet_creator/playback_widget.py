@@ -9,7 +9,7 @@ class PlaybackWidget(QWidget):
         super(PlaybackWidget, self).__init__(parent)
         self.console = main_console_widget
         self.console.append_text("INFO: Loading Playback Widget.----------------")
-
+        self.is_playing = False
         self.status = status_bar
         self.status.set_status_text("N/A")
 
@@ -37,28 +37,36 @@ class PlaybackWidget(QWidget):
                 # start the playback after the image sequence is done loading.
                 self.start_playback()
         except Exception as err:
-            self.console.append_text(str(err.args))
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def setup_ui(self):
-        layout = QVBoxLayout(self)
-        self.label = QLabel(self)
-        layout.addWidget(self.label)
+        try:
+            layout = QVBoxLayout(self)
+            self.label = QLabel(self)
+            layout.addWidget(self.label)
 
-        scroll_area = QScrollArea(self)
-        scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(self.label)
+            scroll_area = QScrollArea(self)
+            scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setWidget(self.label)
 
-        layout.addWidget(scroll_area)
+            layout.addWidget(scroll_area)
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def start_playback(self):
-        if self.image_sequence:
-            self.timer.start(1000 / self.control.get_fps_value())  # 30 frames per second
-            self.console.append_text("INFO: Playback Started.")
-            self.status.set_status_text("Playing Sequence.")
+        try:
+            if self.image_sequence:
+                self.timer.start(1000 / self.control.get_fps_value())  # 30 frames per second
+                self.is_playing = True
+                self.console.append_text("INFO: Playback Started.")
+                self.status.set_status_text("Playing Sequence.")
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def stop_playback(self):
         self.timer.stop()
+        self.is_playing = False
         self.console.append_text("INFO: Playback Stopped.")
         self.status.set_status_text("Playback Stopped.")
 
@@ -74,16 +82,33 @@ class PlaybackWidget(QWidget):
             self.timer.setInterval(1000 / value)
             self.start_playback()
 
-    def update_frame(self):
-        if self.current_frame >= len(self.image_sequence):
-            self.current_frame = 0
-        image = self.image_sequence[self.current_frame]
-        pixmap = QPixmap.fromImage(image)
-        self.label.setPixmap(self.zoomed_pixmap(pixmap))
-        self.current_frame += 1
+    def set_frame_number(self):
+        try:
+            if not self.is_playing:
+                if self.current_frame >= len(self.image_sequence):
+                    self.current_frame = len(self.image_sequence)
 
-        # Update the control.
-        self.control.update_frame_number(self.current_frame)
+                image = self.image_sequence[self.control.get_display_value()]
+                pixmap = QPixmap.fromImage(image)
+                self.label.setPixmap(self.zoomed_pixmap(pixmap))
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
+
+
+    def update_frame(self):
+        try:
+            if self.current_frame >= len(self.image_sequence):
+                self.current_frame = 0
+
+            image = self.image_sequence[self.current_frame]
+            pixmap = QPixmap.fromImage(image)
+            self.label.setPixmap(self.zoomed_pixmap(pixmap))
+            self.current_frame += 1
+
+            # Update the control.
+            self.control.update_frame_number(self.current_frame)
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def wheelEvent(self, event):
         try:
@@ -101,23 +126,32 @@ class PlaybackWidget(QWidget):
                 pixmap = QPixmap.fromImage(image)
                 self.label.setPixmap(self.zoomed_pixmap(pixmap))
         except Exception as err:
-            self.console.append_text(str(err.args))
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.drag_origin = event.pos()
-            self.dragging = True
+        try:
+            if event.button() == Qt.LeftButton:
+                self.drag_origin = event.pos()
+                self.dragging = True
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def mouseMoveEvent(self, event):
-        if self.dragging:
-            delta = event.pos() - self.drag_origin
-            self.drag_origin = event.pos()
+        try:
+            if self.dragging:
+                delta = event.pos() - self.drag_origin
+                self.drag_origin = event.pos()
 
-            self.label.scroll(-delta.x(), -delta.y())
+                self.label.scroll(-delta.x(), -delta.y())
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def mouseReleaseEvent(self, event):
-        if event.button() == Qt.LeftButton:
-            self.dragging = False
+        try:
+            if event.button() == Qt.LeftButton:
+                self.dragging = False
+        except Exception as err:
+            self.console.append_text("ERROR: {}".format(err.args))
 
     def zoomed_pixmap(self, pixmap):
         try:
@@ -129,7 +163,7 @@ class PlaybackWidget(QWidget):
                 pixmap = pixmap.transformed(transform, Qt.SmoothTransformation)
             return pixmap
         except Exception as err:
-            self.console.append_text(str(err.args))
+            self.console.append_text("ERROR: {}".format(err.args))
 
     @property
     def minimum_zoom(self):

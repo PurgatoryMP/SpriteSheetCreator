@@ -1,9 +1,13 @@
 from PyQt5.QtWidgets import QLabel, QStatusBar
+
 import style_sheet
+
 
 class StatusBar(QStatusBar):
     def __init__(self):
         super().__init__()
+
+        self.setStyleSheet(style_sheet.status_bar_style())
 
         self.label1 = QLabel()
         self.label1.setText("Memory Usage: {}")

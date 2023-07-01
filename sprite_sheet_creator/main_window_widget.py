@@ -3,7 +3,7 @@ import sys
 
 import psutil
 from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget, QSizeGrip
 
 import style_sheet
 from console_widget import ConsoleWidget
@@ -15,6 +15,8 @@ from menu_bar_widget import MenuBar
 from playback_widget import PlaybackWidget
 from sprite_sheet_widget import SpriteSheetWidget
 from status_bar_widget import StatusBar
+from higherarchy_widget import FileTableWidget
+from image_generator import ImageGenerator
 
 
 class MainWindow(QMainWindow):
@@ -45,6 +47,15 @@ class MainWindow(QMainWindow):
         console_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         console_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
+        # self.generator = ImageGenerator()
+        # self.generator.get
+
+        self.table = FileTableWidget()
+        table_dock_widget = QDockWidget("Table")
+        table_dock_widget.setWidget(self.table)
+        table_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        table_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+
         # Display the application information in the console before anything else.
         self.main_console_widget.append_text("Super Sprite\nVersion: 1.0.0\n\n")
 
@@ -58,7 +69,7 @@ class MainWindow(QMainWindow):
         control_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         control_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        self.image_sequence_widget = ImageSequenceWidget(self.control_widget, self.main_console_widget)
+        self.image_sequence_widget = ImageSequenceWidget(self.table, self.control_widget, self.main_console_widget)
         image_sequence_dock_widget = QDockWidget("Image Sequence")
         image_sequence_dock_widget.setWidget(self.image_sequence_widget)
         image_sequence_dock_widget.setMaximumHeight(300)
@@ -102,9 +113,11 @@ class MainWindow(QMainWindow):
         menu = self.menu_bar.create_menu_bar()
         self.setMenuBar(menu)
 
-
         # Connect the controls here
         self.control_widget.fpsValueChanged.connect(self.playback_widget.set_fps_value)
+
+        self.control_widget.displayframeChanged.connect(self.playback_widget.set_frame_number)
+
         # control_widget.startframeValueChanged.connect(playback_widget.set_fps_value)
         # control_widget.endframeValueChanged.connect(playback_widget.set_fps_value)
 
@@ -128,6 +141,7 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, control_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, sprite_sheet_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, console_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, table_dock_widget)
 
         # Add a timer to control the playback.
         self.timer = QTimer(self)
@@ -141,7 +155,6 @@ class MainWindow(QMainWindow):
         self.resize_timer.timeout.connect(self.report_size)
 
         self.main_console_widget.append_text("INFO: Finished loading all widgets.\n")
-
 
     def open_file_path(self, file_path):
         if file_path:
@@ -161,7 +174,7 @@ class MainWindow(QMainWindow):
             try:
                 os.startfile(image_path)
             except Exception as err:
-                self.main_console_widget.append_text(str(err.args))
+                self.main_console_widget.append_text("ERROR: {}".format(err.args))
 
     def import_image_sequence(self):
         # Implement the logic to import the image sequence here
@@ -172,19 +185,19 @@ class MainWindow(QMainWindow):
 
         self.statusBar.set_total_frame_text(str(len(self.image_sequence)))
 
-        self.main_console_widget.append_text("image_sequence Loaded.")
+        self.main_console_widget.append_text("INFO: Image Sequence Loaded.")
 
         self.image_sequence_widget.load_sequence(self.image_sequence)
-        self.main_console_widget.append_text("image_sequence_widget Loaded.")
+        self.main_console_widget.append_text("INFO: Image sequence set on Image Sequence Widget.")
 
         self.image_viewer_widget.load_image(self.image_sequence, 0)
-        self.main_console_widget.append_text("image_viewer_widget Loaded.")
+        self.main_console_widget.append_text("INFO: Image set on Image Viewer Widget")
 
         self.playback_widget.load_image_sequence(self.image_sequence)
-        self.main_console_widget.append_text("playback_widget Loaded.")
+        self.main_console_widget.append_text("INFO: Image sequence set on Playback Widget.")
 
         self.sprite_sheet_widget.load_images(self.image_sequence)
-        self.main_console_widget.append_text("sprite_sheet_widget Loaded.")
+        self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
 
     def get_memory_usage(self):
         try:

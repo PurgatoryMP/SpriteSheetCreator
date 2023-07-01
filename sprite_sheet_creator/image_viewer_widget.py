@@ -88,7 +88,7 @@ class ImageViewerWidget(QWidget):
         try:
             if file_path:
                 self.set_display_name_label(file_path)
-                self.console.append_text("Selected image: {}".format(os.path.basename(file_path)))
+                self.console.append_text("Info: Selected image: {}".format(os.path.basename(file_path)))
                 self.original_pixmap = QPixmap(file_path)
                 self.scene.clear()
                 self.scene.addPixmap(self.original_pixmap)

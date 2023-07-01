@@ -1,5 +1,5 @@
 import os
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QScrollArea, QVBoxLayout
 
@@ -9,8 +9,10 @@ import style_sheet
 class ImageSequenceWidget(QWidget):
     imageClicked = pyqtSignal(str)
 
-    def __init__(self, control_widget, main_console_widget):
+    def __init__(self, table_widget, control_widget, main_console_widget):
         super().__init__()
+        self.table = table_widget
+
         self.console = main_console_widget
         self.console.append_text("INFO: Loading Image Sequence Widget.----------------")
 
@@ -48,6 +50,7 @@ class ImageSequenceWidget(QWidget):
             # Load new image sequence
             if image_sequence_list:
                 for image_path in image_sequence_list:
+                    self.set_table_info(image_path)
                     self.console.append_text("INFO: Adding Image to grid: {}".format(image_path))
                     image_widget = QWidget()
                     image_layout = QVBoxLayout(image_widget)
@@ -74,7 +77,30 @@ class ImageSequenceWidget(QWidget):
             self.scroll_area.setWidget(self.content_widget)
             self.updateGeometry()
         except Exception as err:
-            self.console.append_text(str(err.args))
+            self.console.append_text("ERROR: {}".format(err.args))
+
+    def set_table_info(self, file_path):
+        file_info = QFileInfo(file_path)
+
+        # Extract file creation time
+        creation_time = file_info.created().toString(Qt.ISODate)
+
+        # Extract file name and file path
+        file_name = file_info.fileName()
+        file_path = file_info.filePath()
+
+        # Extract file size
+        file_size = file_info.size()
+        file_size_gb = file_size / (1024 * 1024)
+        formatted_file_size_gb = "{:.3f}".format(file_size_gb)
+
+        # Extract image width and height
+        pixmap = QPixmap(file_path)
+        image_width = pixmap.width()
+        image_height = pixmap.height()
+        bit_depth = pixmap.depth()
+
+        self.table.append_data(creation_time, file_name, file_path, "{}GB".format(formatted_file_size_gb), image_width, image_height, "{}bit".format(bit_depth))
 
     def handle_image_click(self, event, image_path):
         if event.button() == Qt.LeftButton:

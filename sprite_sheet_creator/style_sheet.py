@@ -1,22 +1,183 @@
 """This script contains all the QT Control Style settings"""
 import pathlib
 
-import image_generator
+from image_generator import ImageGenerator
+
+
+def get_style():
+
+    generator = ImageGenerator()
+    transparent_checkered_background = generator.get_checker_pattern()
+    print(transparent_checkered_background)
+
+    style_settings = {
+        "": "",
+        "Transparent_Checkered_Background": transparent_checkered_background,
+        "Main_Window_Background_Color": "#303030",
+        "Dock_Widget_Background_color": "#3D3D3D",
+        "Separator_Color": "#161616",
+        "Selected_Color": "#4772B3",
+        "Non_Selected_Color": "#434D4F",
+        "Viewer_Background_color": "#262626",
+        "Unfocused_Console_Background_Color": "#434D4F",
+        "Focused_Console_Background_Color": "#495456",
+        "Border_scale": "1",
+        "Horizontal_Scrollbar_Color": "#bf7575",
+        "Vertical_Scrollbar_Color": "#94bf75",
+        "Large_Font_Size": "18",
+        "Normal_Font_Size": "14",
+        "Small_Font_Size": "10",
+    }
+    return style_settings
+
 
 def main_window_style():
     # background-image: url({"G:/Models/Refrences/Dj9dRgDUUAAtBLc.jpg"});
 
     style_sheet = """
         QMainWindow {
-            background-color: #303030;
+            background-color: %(Main_Window_Background_Color)s;
             font-size: 18px;
             color: White;
             border: 1px solid Black;
             border-radius: 5px;
+        }
+        QMainWindow::separator {
+            background-color: %(Separator_Color)s;
+            border: 1px solid Black;
+            border-radius: 3px;
+        }
+        QMainWindow::separator:hover  {
+            background-color: %(Separator_Color)s;  
+            border: 1px solid gold;
+            border-radius: 3px;
+        }
+        
+        QTabWidget::pane {
+            border: 1px solid Gold;
+            border-radius: 5px;
+        }
+
+        QTabBar::tab {
+            background-color: %(Non_Selected_Color)s;
+            color: White;
+            padding: 5px;
+            border: 1px solid Black;
+            border-radius: 5px;
+        }
+
+        QTabBar::tab:selected {
+            background-color: %(Selected_Color)s;
+            color: Gold;
+            border: 1px solid Gold;
+            border-radius: 5px;
+        }
+        
+        QDockWidget {
+            background-color: %(Selected_Color)s;
+            border-radius: 15px;
+        }
+        
+        QDockWidget::title {
+            alignment: AlignCenter;
+            background-color: #484A4F;
+            color: White;
+            font-size: 14px;
+            padding: 5px;
+            border: 1px solid Black;
+            border-radius: 5px;
+        }
+        
+        QDockWidget::title:hover {
+            background-color: #52545A;
+            border: 1px solid LightGrey;
+        }
+        
+        QDockWidget::float-button:hover {
+            border: 1px solid LightBlue;
+            border-radius: 10px;
+        }
+        
+        QDockWidget::close-button:hover {
+            border: 1px solid Red;
+            border-radius: 10px;
+        }
     }
-    """
+    """ % get_style()
 
     return style_sheet
+
+def table_widget_style():
+    stylesheet = """
+    QTableWidget {
+        background-color: #484A4F;  /* Set the background color */
+        alternate-background-color: Green;  /* Set the alternate row background color */
+        selection-background-color: Blue;  /* Set the selection background color */
+        selection-color: Gold;  /* Set the selection text color */
+        selection-border: 1px solid Gold;
+        color: white;
+        border: 1px solid Black;
+        border-radius: 10px;
+    }
+
+    QTableWidget::item {
+        background-color: #6e6f70;
+        border: 1px solid Black;
+        border-radius: 10px;
+        padding: 5px;
+    }
+
+    QHeaderView::section {
+        background-color: #434D4F;  /* Set the header background color */
+        color: White;  /* Set the header text color */
+        padding: 5px;  /* Set the padding for header sections */
+        border: 1px solid Black;
+        border-radius: 5px;
+    }
+
+    QHeaderView::section:checked {
+        background-color: #4772B3;  /* Set the background color when the section is checked */
+        
+    }
+
+    QTableWidget QTableCornerButton::section {
+        background-color: #4772B3;  /* Set the corner button background color */
+        border: 1px solid Black;
+        border-radius: 20px;
+    }
+    
+    QHeaderView QTableCornerButton::checked {
+        background-color: Red;  /* Set the background color when the section is checked */
+        
+    }
+
+    QScrollBar:vertical {
+        background-color: #575859;
+        width: 15px;
+        margin: 0px;
+    }
+    
+    QScrollBar:horizontal {
+        background-color: #575859;
+        height: 15px;
+        margin: 0px;
+    }
+
+    QScrollBar::handle:vertical {
+        border: 1px solid Black;
+        background: #94bf75;
+        min-height: 20px;
+        border-radius: 5px;
+    }
+
+    QScrollBar::handle:horizontal {
+        border: 1px solid Black;
+        background: #bf7575;
+        min-width: 20px;
+        border-radius: 5px;
+    }
+    """
+    return stylesheet
 
 def dock_widget_style():
     style_sheet = """
@@ -115,7 +276,7 @@ def graphics_scene_style():
 
     style_sheet = """
         QGraphicsView {
-        background-color: #3D3D3D;
+            background-color: %(Viewer_Background_color)s;
         }
         
         QGraphicsView:hover {
@@ -123,7 +284,7 @@ def graphics_scene_style():
             border: 2px solid LightGrey;
             border-radius: 8px;
         }
-    """
+    """ % get_style()
     return style_sheet
 
 
@@ -271,7 +432,7 @@ def folder_path_label_style():
 def console_style():
     style_sheet = """
         QTextEdit {
-            background-color: #434D4F; /* Background color */
+            background-color: %(Unfocused_Console_Background_Color)s; /* Background color */
             color: #White; /* Text color */
             font-family: Arial, sans-serif; /* Font family */
             font-size: 12px; /* Font size */
@@ -285,16 +446,16 @@ def console_style():
         }
         
         QTextEdit:focus {
-            background-color: #495456;
+            background-color: %(Focused_Console_Background_Color)s; /* Background color */
             color: #White; /* Text color */
             border: 1px solid #50BBAE; /* Border style when focused */         
         }
-    """
+    """ % get_style()
     return style_sheet
 
 def status_bar_style():
     style_sheet = """
-        StatusBar {
+        QStatusBar {
             background-color: #545454;
             color: #000000;
             font-family: Arial;
@@ -303,13 +464,24 @@ def status_bar_style():
             border-radius: 8px;
         }
         
-        StatusBar QLabel {
+        StatusBar:QLabel {
             color: White;
             font-size: 14px;
             border: 1px solid Black;
             border-radius: 8px;
+        }   
+        
+        QSizeGrip {
+            background-color: #434D4F;
+            border: 1px solid Black;
+            border-radius: 5px;
         }
-    
+        QSizeGrip:hover {
+            background-color: lightgreen;
+            border: 1px solid Black;
+            border-radius: 5px;
+        }
+        
     """
     return style_sheet
 

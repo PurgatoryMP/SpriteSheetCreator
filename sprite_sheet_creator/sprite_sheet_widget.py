@@ -1,12 +1,21 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QPainter, QTransform
+from PyQt5.QtGui import QPixmap, QPainter, QTransform, QPen
 from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout, QScrollArea
 
 import style_sheet
 
 
 class SpriteSheetWidget(QWidget):
+    """Widget for displaying and manipulating sprite sheets."""
+
     def __init__(self, main_console_widget, control_widget):
+        """
+        Initializes the SpriteSheetWidget.
+
+        Args:
+            main_console_widget: QWidget: the main console widget.
+            control_widget: QWidget: the control widget.
+        """
         super().__init__()
 
         self.sprite_sheet = None
@@ -44,14 +53,14 @@ class SpriteSheetWidget(QWidget):
         self.max_scale_factor = 10.0
 
         # Set the minimum grid size.
-        self.minimum_grid_size = 2
+        self.minimum_grid_size = 0
 
         # Enable mouse tracking to receive mouse wheel events
         self.view.setMouseTracking(True)
 
         self.console.append_text("INFO: Finished Loading Sprite Sheet Widget.")
 
-    def load_images(self, sequence: list):
+    def load_images(self, sequence: list) -> None:
         """Loads the provided image sequence.
 
         Args:
@@ -75,6 +84,9 @@ class SpriteSheetWidget(QWidget):
             self.console.append_text("ERROR: {}".format(err.args))
 
     def update_sprite_sheet(self) -> None:
+        """
+        Updates the sprite sheet based on the current image sequence and settings.
+        """
         try:
             image_list = []
             if self.image_sequence:
@@ -92,21 +104,30 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: {}".format(err.args))
 
-    def calculate_rows_columns(self):
-        # total_images = len(self.images)
+    def calculate_rows_columns(self) -> tuple:
+        """
+        Calculates the number of rows and columns for the sprite sheet grid.
 
+        Returns:
+            tuple: the number of rows and columns.
+        """
         rows = self.control.get_grid_rows_value()
         columns = self.control.get_grid_columns_value()
         if rows <= self.minimum_grid_size:
-            rows = 2
+            self.control.set_grid_rows_value(1)
+            rows = 1
         elif columns <= self.minimum_grid_size:
-            columns = 2
-
-        # rows = int(total_images ** 0.5)  # Square root rounded down for rows
-        # columns = (total_images + rows - 1) // rows  # Ceiling division for columns
+            self.control.set_grid_columns_value(1)
+            columns = 1
         return rows, columns
 
     def create_sprite_sheet(self):
+        """
+        Creates the sprite sheet based on the loaded images and settings.
+
+        Returns:
+            QPixmap: the sprite sheet image.
+        """
         try:
             sprite_sheet_width = self.control.get_image_width_value()
             sprite_sheet_height = self.control.get_image_height_value()
@@ -123,8 +144,11 @@ class SpriteSheetWidget(QWidget):
             # Create a separate QPixmap for the outline layer
             outline_layer = QPixmap(sprite_sheet_width, sprite_sheet_height)
             outline_layer.fill(Qt.transparent)
+
+            # Create an Outline around images on the sprite sheet
             painter = QPainter(outline_layer)
-            painter.setPen(Qt.black)  # Set the pen color to black for the outline
+            # Set the pen color to cyan for the outline and define the line thickness.
+            painter.setPen(QPen(Qt.cyan, 5))
 
             sprite_painter = QPainter(sprite_sheet)
             x = 0
@@ -160,12 +184,21 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: {}".format(err.args))
 
-    def display_sprite_sheet(self):
+    def display_sprite_sheet(self) -> None:
+        """
+        Displays the sprite sheet in the QGraphicsView.
+        """
         self.scene.clear()
         self.scene.addPixmap(self.sprite_sheet)
         self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event) -> None:
+        """
+        Handles the wheel event for zooming the sprite sheet.
+
+        Args:
+            event: QWheelEvent: the wheel event object.
+        """
         try:
             if event.modifiers() == Qt.ControlModifier:
                 # Only zoom when the Ctrl key is pressed
@@ -179,7 +212,15 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: {}".format(err.args))
 
-    def zoom_image(self, zoom_factor, scroll_pos):
+    def zoom_image(self, zoom_factor, scroll_pos) -> None:
+        """
+        Zooms the sprite sheet image.
+
+        Args:
+            zoom_factor: float: the zoom factor.
+            scroll_pos: QPoint: the position to zoom around.
+        """
+
         try:
             old_pos = self.view.mapToScene(self.view.viewport().rect().center())
 
@@ -202,7 +243,10 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: {}".format(err.args))
 
-    def fit_to_widget(self):
+    def fit_to_widget(self) -> None:
+        """
+        Fits the sprite sheet image to the widget size.
+        """
         try:
             self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         except Exception as err:
