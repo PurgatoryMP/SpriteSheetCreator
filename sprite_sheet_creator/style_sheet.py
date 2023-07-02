@@ -4,6 +4,8 @@ import pathlib
 from image_generator import ImageGenerator
 
 
+# TODO: Update all the stylesheets with the defined style settings.
+
 def get_style():
 
     generator = ImageGenerator()

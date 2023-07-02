@@ -20,7 +20,18 @@ from image_generator import ImageGenerator
 
 
 class MainWindow(QMainWindow):
+    """The main window of the application."""
+
     def __init__(self):
+        """
+        Create the main application window for Super Sprite.
+
+        This class defines the main application window and sets up the various widgets and dock areas.
+
+        Attributes:
+            image_sequence (list): A list containing image file paths for the loaded image sequence.
+
+        """
         super().__init__()
 
         # Set window title
@@ -50,7 +61,7 @@ class MainWindow(QMainWindow):
         # self.generator = ImageGenerator()
         # self.generator.get
 
-        self.table = FileTableWidget()
+        self.table = FileTableWidget(self.main_console_widget)
         table_dock_widget = QDockWidget("Table")
         table_dock_widget.setWidget(self.table)
         table_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
@@ -159,12 +170,26 @@ class MainWindow(QMainWindow):
         self.main_console_widget.append_text("INFO: Finished loading all widgets.\n")
 
     def open_file_path(self, file_path):
+        """
+        Open the file path in the default system application.
+
+        Args:
+            file_path (str): The path of the file to open.
+
+        """
         if file_path:
             directory = os.path.dirname(file_path)
             if directory:
                 os.startfile(directory)
 
     def handle_image_clicked(self, image_path):
+        """
+        Handle the image click event.
+
+        Args:
+            image_path (str): The path of the clicked image.
+
+        """
         try:
             if image_path:
                 self.image_viewer_widget.set_select_image(image_path)
@@ -221,27 +246,38 @@ class MainWindow(QMainWindow):
             self.main_console_widget.append_text(str(err.args))
 
     def resizeEvent(self, event):
+        """
+        Triggered when the main window is resized by the user.
+        """
         # Call the base class resizeEvent method
         super().resizeEvent(event)
         # Start or restart the resize timer
         self.resize_timer.start()
 
     def report_size(self):
+        """
+        Report the current size of the main window.
+
+        After the window has been resized, this function fits the images to the new widget size.
+
+        """
         # Get the new size of the main window
         # new_size = self.size()
         # print(f"New size: {new_size.width()} x {new_size.height()}")
 
-        print("0")
-
         # After the window has been resized, fit the images to the new widget size.
+        # TODO: Also make it so that the undocked widgets trigger this function when scaled.
         self.sprite_sheet_widget.fit_to_widget()
-        print("1")
         self.image_viewer_widget.fit_to_widget()
-        print("2")
         self.playback_widget.fit_to_widget()
-        print("3")
 
     def exit_application(self):
+        """
+        Exit the application gracefully.
+
+        This method is called when the application is exiting.
+
+        """
         self.close()
 
 

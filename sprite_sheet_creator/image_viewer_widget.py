@@ -77,7 +77,7 @@ class ImageViewerWidget(QWidget):
             self.fit_to_widget()
             self.set_display_name_label(image_path)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: load_image: {}".format(err.args))
 
     def set_select_image(self, file_path) -> None:
         """Set and display a selected image.
@@ -98,7 +98,7 @@ class ImageViewerWidget(QWidget):
 
 
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: set_select_image: {}".format(err.args))
 
     def wheelEvent(self, event) -> None:
         """Handle wheel events for zooming the image.

@@ -7,9 +7,19 @@ import style_sheet
 
 
 class ImageSequenceWidget(QWidget):
+    """A widget for displaying an image sequence."""
+
     imageClicked = pyqtSignal(str)
 
     def __init__(self, table_widget, control_widget, main_console_widget):
+        """
+        Initialize the ImageSequenceWidget.
+
+        Args:
+            table_widget (QWidget): The table widget for displaying image information.
+            control_widget (QWidget): The control widget for setting start and end frames.
+            main_console_widget (QWidget): The console widget for displaying messages.
+        """
         super().__init__()
         self.table = table_widget
 
@@ -40,6 +50,12 @@ class ImageSequenceWidget(QWidget):
         self.console.append_text("INFO: Finished Loading Image Sequence Widget.")
 
     def load_sequence(self, image_sequence_list):
+        """
+        Load a new image sequence.
+
+        Args:
+            image_sequence_list (list): A list of image paths for the sequence.
+        """
         try:
             # Clear existing image widgets
             for i in reversed(range(self.content_layout.count())):
@@ -80,6 +96,13 @@ class ImageSequenceWidget(QWidget):
             self.console.append_text("ERROR: {}".format(err.args))
 
     def set_table_info(self, file_path):
+        """
+        Set image information in the table.
+
+        Args:
+            file_path (str): The path of the image file.
+        """
+
         file_info = QFileInfo(file_path)
 
         # Extract file creation time
@@ -103,5 +126,12 @@ class ImageSequenceWidget(QWidget):
         self.table.append_data(creation_time, file_name, file_path, formatted_file_size_gb, image_width, image_height, "{}bit".format(bit_depth))
 
     def handle_image_click(self, event, image_path):
+        """
+        Handle the click event on an image.
+
+        Args:
+            event (QMouseEvent): The mouse event.
+            image_path (str): The path of the clicked image.
+        """
         if event.button() == Qt.LeftButton:
             self.imageClicked.emit(image_path)

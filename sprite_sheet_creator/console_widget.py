@@ -6,11 +6,17 @@ import style_sheet
 
 class ConsoleWidget(QWidget):
     def __init__(self):
+        """
+        Initialize the ConsoleWidget.
+        """
         super().__init__()
 
         self.init_ui()
 
     def init_ui(self):
+        """
+        Initialize the user interface of the ConsoleWidget.
+        """
         layout = QVBoxLayout()
 
         # Create a QScrollArea widget
@@ -33,6 +39,15 @@ class ConsoleWidget(QWidget):
         self.setLayout(layout)
 
     def append_text(self, text):
+        """
+        Append text to the console window.
+
+        Args:
+            text (str): The text to be appended to the console window.
+
+        Returns:
+            None
+        """
         # Append text to the console window
         self.console.append(text)
         self.console.moveCursor(QTextCursor.End)  # Move cursor to the end

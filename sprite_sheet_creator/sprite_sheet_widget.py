@@ -133,12 +133,14 @@ class SpriteSheetWidget(QWidget):
             minimum_value = 1
             rows = self.control.get_grid_rows_value()
             columns = self.control.get_grid_columns_value()
+
             if rows <= self.minimum_grid_size:
                 self.control.set_grid_rows_value(minimum_value)
                 rows = minimum_value
             elif columns <= self.minimum_grid_size:
                 self.control.set_grid_columns_value(minimum_value)
                 columns = minimum_value
+
             return rows, columns
         except Exception as err:
             self.console.append_text("ERROR: calculate_rows_columns: {}".format(err.args))
