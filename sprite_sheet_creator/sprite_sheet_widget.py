@@ -18,8 +18,10 @@ class SpriteSheetWidget(QWidget):
         """
         super().__init__()
 
+        self.scroll_pos = None
         self.sprite_sheet = None
         self.images = None
+        self.grid_overlay = True
         self.console = main_console_widget
         self.control = control_widget
 
@@ -67,7 +69,12 @@ class SpriteSheetWidget(QWidget):
             sequence: str: a list of file paths to the individual images.
         """
         image_list = []
-        self.image_sequence = sequence
+
+        start_frame = self.control.get_start_frame_value()
+        self.control.set_end_frame_value(len(sequence))
+
+        self.image_sequence = sequence[start_frame:len(sequence)]
+
         try:
             if self.image_sequence:
                 for file_path in self.image_sequence:
@@ -81,16 +88,26 @@ class SpriteSheetWidget(QWidget):
                     # Display the sprite sheet
                     self.display_sprite_sheet()
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: load_images: {}".format(err.args))
 
     def update_sprite_sheet(self) -> None:
         """
         Updates the sprite sheet based on the current image sequence and settings.
         """
         try:
-            image_list = []
             if self.image_sequence:
-                for file_path in self.image_sequence:
+                start = self.control.get_start_frame_value()
+                end = self.control.get_end_frame_value()
+
+                if start >= len(self.image_sequence):
+                    self.control.set_start_frame_value(len(self.image_sequence))
+
+                if end >= len(self.image_sequence):
+                    self.control.set_end_frame_value(len(self.image_sequence))
+
+
+                image_list = []
+                for file_path in self.image_sequence[start:end]:
                     image = QPixmap(file_path)
                     image_list.append(image)
                 self.images = image_list
@@ -101,8 +118,9 @@ class SpriteSheetWidget(QWidget):
                     # Display the sprite sheet
                     self.display_sprite_sheet()
                     self.fit_to_widget()
+
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: update_sprite_sheet: {}".format(err.args))
 
     def calculate_rows_columns(self) -> tuple:
         """
@@ -111,15 +129,31 @@ class SpriteSheetWidget(QWidget):
         Returns:
             tuple: the number of rows and columns.
         """
-        rows = self.control.get_grid_rows_value()
-        columns = self.control.get_grid_columns_value()
-        if rows <= self.minimum_grid_size:
-            self.control.set_grid_rows_value(1)
-            rows = 1
-        elif columns <= self.minimum_grid_size:
-            self.control.set_grid_columns_value(1)
-            columns = 1
-        return rows, columns
+        try:
+            minimum_value = 1
+            rows = self.control.get_grid_rows_value()
+            columns = self.control.get_grid_columns_value()
+            if rows <= self.minimum_grid_size:
+                self.control.set_grid_rows_value(minimum_value)
+                rows = minimum_value
+            elif columns <= self.minimum_grid_size:
+                self.control.set_grid_columns_value(minimum_value)
+                columns = minimum_value
+            return rows, columns
+        except Exception as err:
+            self.console.append_text("ERROR: calculate_rows_columns: {}".format(err.args))
+
+    def toggle_grid_overlay(self):
+        try:
+            if self.grid_overlay:
+                self.grid_overlay = False
+            else:
+                self.grid_overlay = True
+
+            self.console.append_text("INFO: Grid Overlay set to: {}".format(self.grid_overlay))
+            self.update_sprite_sheet()
+        except Exception as err:
+            self.console.append_text("ERROR: toggle_grid_overlay: {}".format(err.args))
 
     def create_sprite_sheet(self):
         """
@@ -129,6 +163,7 @@ class SpriteSheetWidget(QWidget):
             QPixmap: the sprite sheet image.
         """
         try:
+
             sprite_sheet_width = self.control.get_image_width_value()
             sprite_sheet_height = self.control.get_image_height_value()
 
@@ -158,7 +193,8 @@ class SpriteSheetWidget(QWidget):
                 scaled_image = image.scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
 
                 # Draw the outline on the outline layer
-                painter.drawRect(x, y, target_width, target_height)
+                if self.grid_overlay:
+                    painter.drawRect(x, y, target_width, target_height)
 
                 # Draw the scaled image on the sprite sheet
                 sprite_painter.drawPixmap(x, y, scaled_image)
@@ -182,15 +218,18 @@ class SpriteSheetWidget(QWidget):
 
             return sprite_sheet_with_outline
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: create_sprite_sheet: {}".format(err.args))
 
     def display_sprite_sheet(self) -> None:
         """
         Displays the sprite sheet in the QGraphicsView.
         """
-        self.scene.clear()
-        self.scene.addPixmap(self.sprite_sheet)
-        self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+        try:
+            self.scene.clear()
+            self.scene.addPixmap(self.sprite_sheet)
+            self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+        except Exception as err:
+            self.console.append_text("ERROR: display_sprite_sheet: {}".format(err.args))
 
     def wheelEvent(self, event) -> None:
         """
@@ -206,19 +245,19 @@ class SpriteSheetWidget(QWidget):
                 zoom_factor = 1.1 if scroll_delta > 0 else 0.9
 
                 cursor_pos = event.pos()
-                scroll_pos = self.view.mapToScene(cursor_pos)
+                self.scroll_pos = self.view.mapToScene(cursor_pos)
 
-                self.zoom_image(zoom_factor, scroll_pos)
+                self.zoom_image(zoom_factor)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: wheelEvent: {}".format(err.args))
 
-    def zoom_image(self, zoom_factor, scroll_pos) -> None:
+    def zoom_image(self, zoom_factor) -> None:
         """
         Zooms the sprite sheet image.
 
         Args:
             zoom_factor: float: the zoom factor.
-            scroll_pos: QPoint: the position to zoom around.
+            self.scroll_pos: QPoint: the position to zoom around.
         """
 
         try:
@@ -240,8 +279,12 @@ class SpriteSheetWidget(QWidget):
             self.view.verticalScrollBar().setValue(
                 int(self.view.verticalScrollBar().value()) + int(scroll_adjustment.y())
             )
+            
+            if self.scroll_pos is not None:
+                self.view.centerOn(self.scroll_pos)
+
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: zoom_image: {}".format(err.args))
 
     def fit_to_widget(self) -> None:
         """
@@ -250,4 +293,4 @@ class SpriteSheetWidget(QWidget):
         try:
             self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: fit_to_widget: {}".format(err.args))

@@ -92,7 +92,7 @@ class ImageSequenceWidget(QWidget):
         # Extract file size
         file_size = file_info.size()
         file_size_gb = file_size / (1024 * 1024)
-        formatted_file_size_gb = "{:.3f}".format(file_size_gb)
+        formatted_file_size_gb = "{:.3f}GB".format(file_size_gb)
 
         # Extract image width and height
         pixmap = QPixmap(file_path)
@@ -100,7 +100,7 @@ class ImageSequenceWidget(QWidget):
         image_height = pixmap.height()
         bit_depth = pixmap.depth()
 
-        self.table.append_data(creation_time, file_name, file_path, "{}GB".format(formatted_file_size_gb), image_width, image_height, "{}bit".format(bit_depth))
+        self.table.append_data(creation_time, file_name, file_path, formatted_file_size_gb, image_width, image_height, "{}bit".format(bit_depth))
 
     def handle_image_click(self, event, image_path):
         if event.button() == Qt.LeftButton:

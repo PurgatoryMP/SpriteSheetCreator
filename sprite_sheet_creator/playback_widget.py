@@ -1,12 +1,18 @@
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QTransform
-from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QScrollArea
+from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QScrollArea, QScrollBar, QGraphicsView, QGraphicsScene
 import style_sheet
 
+# TODO: Fit the playback to the widget on scale
+# TODO: Fix the zoom to match the image viewer.
+# TODO: Fix Checker Alpha Background not appearing.
 
 class PlaybackWidget(QWidget):
     def __init__(self, main_console_widget, control_widget, status_bar, parent=None):
         super(PlaybackWidget, self).__init__(parent)
+        self.label = None
+        self.scene = None
+        self.view = None
         self.console = main_console_widget
         self.console.append_text("INFO: Loading Playback Widget.----------------")
         self.is_playing = False
@@ -27,6 +33,23 @@ class PlaybackWidget(QWidget):
         self.control.update_frame_number(self.current_frame)
         self.console.append_text("INFO: Finished loading Playback Widget.")
 
+    def setup_ui(self):
+        try:
+            layout = QVBoxLayout(self)
+
+            self.view = QGraphicsView(self)
+            self.scene = QGraphicsScene(self)
+            self.view.setScene(self.scene)
+            layout.addWidget(self.view)
+
+            scroll_area = QScrollArea(self)
+            scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
+            scroll_area.setWidgetResizable(True)
+            scroll_area.setWidget(self.view)
+            layout.addWidget(scroll_area)
+        except Exception as err:
+            self.console.append_text("ERROR: setup_ui: {}".format(err.args))
+
     def load_image_sequence(self, image_sequence_list):
         try:
             self.image_sequence = []
@@ -37,22 +60,14 @@ class PlaybackWidget(QWidget):
                 # start the playback after the image sequence is done loading.
                 self.start_playback()
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: load_image_sequence: {}".format(err.args))
 
-    def setup_ui(self):
+    def fit_to_widget(self) -> None:
+        """Fit the image to the size of the widget."""
         try:
-            layout = QVBoxLayout(self)
-            self.label = QLabel(self)
-            layout.addWidget(self.label)
-
-            scroll_area = QScrollArea(self)
-            scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
-            scroll_area.setWidgetResizable(True)
-            scroll_area.setWidget(self.label)
-
-            layout.addWidget(scroll_area)
+            self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: fit_to_widget: {}".format(err.args))
 
     def start_playback(self):
         try:
@@ -62,7 +77,7 @@ class PlaybackWidget(QWidget):
                 self.console.append_text("INFO: Playback Started.")
                 self.status.set_status_text("Playing Sequence.")
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: start_playback: {}".format(err.args))
 
     def stop_playback(self):
         self.timer.stop()
@@ -86,14 +101,14 @@ class PlaybackWidget(QWidget):
         try:
             if not self.is_playing:
                 if self.current_frame >= len(self.image_sequence):
-                    self.current_frame = len(self.image_sequence)
+                    self.current_frame = len(self.image_sequence) - 1
 
                 image = self.image_sequence[self.control.get_display_value()]
                 pixmap = QPixmap.fromImage(image)
-                self.label.setPixmap(self.zoomed_pixmap(pixmap))
+                self.scene.clear()
+                self.scene.addPixmap(pixmap)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
-
+            self.console.append_text("ERROR: set_frame_number: {}".format(err.args))
 
     def update_frame(self):
         try:
@@ -102,31 +117,56 @@ class PlaybackWidget(QWidget):
 
             image = self.image_sequence[self.current_frame]
             pixmap = QPixmap.fromImage(image)
-            self.label.setPixmap(self.zoomed_pixmap(pixmap))
+            self.scene.clear()
+            self.scene.addPixmap(pixmap)
             self.current_frame += 1
 
             # Update the control.
             self.control.update_frame_number(self.current_frame)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: update_frame: {}".format(err.args))
 
     def wheelEvent(self, event):
         try:
             if event.modifiers() == Qt.ControlModifier:
+                if not self.image_sequence:
+                    return
+
                 delta = event.angleDelta().y() / 120
                 zoom_factor = 1.1 ** delta
                 new_zoom_factor = self.zoom_factor * zoom_factor
+
                 if self.minimum_zoom <= new_zoom_factor <= self.maximum_zoom:
                     self.zoom_factor = new_zoom_factor
 
-                cursor_pos = self.label.mapFromGlobal(event.globalPos())
+                cursor_pos = self.view.mapFromGlobal(event.globalPos())
                 self.zoom_origin = cursor_pos
 
-                image = self.image_sequence[self.current_frame]
-                pixmap = QPixmap.fromImage(image)
-                self.label.setPixmap(self.zoomed_pixmap(pixmap))
+                if 0 <= self.current_frame < len(self.image_sequence):
+                    image = self.image_sequence[self.current_frame]
+                    pixmap = QPixmap.fromImage(image)
+
+                    self.scene.clear()
+                    self.scene.addPixmap(self.zoomed_pixmap(pixmap))
+
+                    # Apply the zoom factor to the view
+                    self.view.setTransform(QTransform().scale(self.zoom_factor, self.zoom_factor))
+
+                    # Adjust the scroll bars to keep the view centered
+                    scroll_area = self.view.parentWidget()
+                    horizontal_bar = scroll_area.horizontalScrollBar()
+                    vertical_bar = scroll_area.verticalScrollBar()
+
+                    # Calculate the center point of the view
+                    view_rect = self.view.viewport().rect()
+                    center_point = view_rect.center()
+
+                    # Adjust the scroll bars to keep the center point visible
+                    horizontal_bar.setValue(horizontal_bar.value() + cursor_pos.x() - center_point.x())
+                    vertical_bar.setValue(vertical_bar.value() + cursor_pos.y() - center_point.y())
+
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: wheelEvent: {}".format(err.args))
 
     def mousePressEvent(self, event):
         try:
@@ -134,7 +174,7 @@ class PlaybackWidget(QWidget):
                 self.drag_origin = event.pos()
                 self.dragging = True
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: mousePressEvent: {}".format(err.args))
 
     def mouseMoveEvent(self, event):
         try:
@@ -144,14 +184,14 @@ class PlaybackWidget(QWidget):
 
                 self.label.scroll(-delta.x(), -delta.y())
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: mouseMoveEvent: {}".format(err.args))
 
     def mouseReleaseEvent(self, event):
         try:
             if event.button() == Qt.LeftButton:
                 self.dragging = False
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: mouseReleaseEvent: {}".format(err.args))
 
     def zoomed_pixmap(self, pixmap):
         try:
@@ -163,7 +203,7 @@ class PlaybackWidget(QWidget):
                 pixmap = pixmap.transformed(transform, Qt.SmoothTransformation)
             return pixmap
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: zoomed_pixmap: {}".format(err.args))
 
     @property
     def minimum_zoom(self):

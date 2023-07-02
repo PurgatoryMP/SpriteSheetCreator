@@ -123,8 +123,8 @@ class ControlWidget(QWidget):
         # set the initial value for the Frame Number to 0
         self.frame_number_display.setValue(0)
 
-        self.checkbox = QCheckBox("Check me")
-
+        self.checkbox = QCheckBox("Grid Overlay")
+        self.checkbox.setChecked(True)
 
         self.console.append_text("INFO: Control Settings:-------------")
         self.console.append_text("INFO: FPS = 24")
@@ -157,6 +157,11 @@ class ControlWidget(QWidget):
         separator6.setFrameShadow(QFrame.Sunken)
         separator6.setFixedHeight(2)
 
+        separator7 = QFrame()
+        separator7.setFrameShape(QFrame.HLine)
+        separator7.setFrameShadow(QFrame.Sunken)
+        separator7.setFixedHeight(2)
+
         controls = [
             (play_button, stop_button),
             (separator1, separator2),
@@ -166,7 +171,7 @@ class ControlWidget(QWidget):
             (start_frame_label, self.start_frame_input),
             (end_frame_label, self.end_frame_input),
             (separator5, separator6),
-            (self.checkbox, separator6),
+            (self.checkbox, separator7),
             (grid_rows_label, self.grid_rows_input),
             (grid_columns_label, self.grid_columns_input),
             (image_width_label, self.image_width_input),

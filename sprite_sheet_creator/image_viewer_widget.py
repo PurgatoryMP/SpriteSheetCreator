@@ -135,7 +135,6 @@ class ImageViewerWidget(QWidget):
                 self.scale_factor = self.max_scale_factor
 
             self.view.setTransform(QTransform().scale(self.scale_factor, self.scale_factor))
-
             new_pos = self.view.mapToScene(self.view.viewport().rect().center())
 
             scroll_adjustment = new_pos - old_pos
@@ -149,14 +148,14 @@ class ImageViewerWidget(QWidget):
             if self.scroll_pos is not None:
                 self.view.centerOn(self.scroll_pos)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: zoom_image: {}".format(err.args))
 
     def fit_to_widget(self) -> None:
         """Fit the image to the size of the widget."""
         try:
             self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: fit_to_widget: {}".format(err.args))
 
     def set_display_name_label(self, file_path) -> None:
         """Set the text of the QLabel to the name of the file currently being displayed.
@@ -169,12 +168,12 @@ class ImageViewerWidget(QWidget):
                 self.display_name_label.setText("{}".format(file_path))
                 self.display_name_button.clicked.connect(lambda: self.handle_image_path_click(file_path))
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: set_display_name_label: {}".format(err.args))
 
     def handle_image_path_click(self, image_path):
         try:
             self.imagepathClicked.emit(image_path)
         except Exception as err:
-            self.console.append_text("ERROR: {}".format(err.args))
+            self.console.append_text("ERROR: handle_image_path_click: {}".format(err.args))
 
 

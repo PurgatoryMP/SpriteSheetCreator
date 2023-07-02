@@ -118,8 +118,10 @@ class MainWindow(QMainWindow):
 
         self.control_widget.displayframeChanged.connect(self.playback_widget.set_frame_number)
 
-        # control_widget.startframeValueChanged.connect(playback_widget.set_fps_value)
-        # control_widget.endframeValueChanged.connect(playback_widget.set_fps_value)
+        self.control_widget.startframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.endframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+
+        self.control_widget.checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_grid_overlay)
 
         self.control_widget.gridrowValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.gridcolumnValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
@@ -229,9 +231,15 @@ class MainWindow(QMainWindow):
         # new_size = self.size()
         # print(f"New size: {new_size.width()} x {new_size.height()}")
 
+        print("0")
+
         # After the window has been resized, fit the images to the new widget size.
         self.sprite_sheet_widget.fit_to_widget()
+        print("1")
         self.image_viewer_widget.fit_to_widget()
+        print("2")
+        self.playback_widget.fit_to_widget()
+        print("3")
 
     def exit_application(self):
         self.close()
