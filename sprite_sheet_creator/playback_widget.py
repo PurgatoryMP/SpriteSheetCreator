@@ -3,12 +3,32 @@ from PyQt5.QtGui import QImage, QPixmap, QTransform
 from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QScrollArea, QScrollBar, QGraphicsView, QGraphicsScene
 import style_sheet
 
+
 # TODO: Fit the playback to the widget on scale
 # TODO: Fix the zoom to match the image viewer.
 # TODO: Fix Checker Alpha Background not appearing.
 
 class PlaybackWidget(QWidget):
+    """
+    A widget for playing back an image sequence.
+
+    Args:
+        main_console_widget (QWidget): The main console widget.
+        control_widget (QWidget): The control widget.
+        status_bar (QWidget): The status bar widget.
+        parent (QWidget, optional): The parent widget. Defaults to None.
+    """
+
     def __init__(self, main_console_widget, control_widget, status_bar, parent=None):
+        """
+        Initializes the PlaybackWidget.
+
+        Args:
+            main_console_widget (QWidget): The main console widget.
+            control_widget (QWidget): The control widget.
+            status_bar (QWidget): The status bar widget.
+            parent (QWidget, optional): The parent widget. Defaults to None.
+        """
         super(PlaybackWidget, self).__init__(parent)
         self.label = None
         self.scene = None
@@ -34,6 +54,9 @@ class PlaybackWidget(QWidget):
         self.console.append_text("INFO: Finished loading Playback Widget.")
 
     def setup_ui(self):
+        """
+        Sets up the user interface for the widget.
+        """
         try:
             layout = QVBoxLayout(self)
 
@@ -51,6 +74,12 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: setup_ui: {}".format(err.args))
 
     def load_image_sequence(self, image_sequence_list):
+        """
+        Loads an image sequence.
+
+        Args:
+            image_sequence_list (list): A list of image file paths.
+        """
         try:
             self.image_sequence = []
             if image_sequence_list:
@@ -63,13 +92,18 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: load_image_sequence: {}".format(err.args))
 
     def fit_to_widget(self) -> None:
-        """Fit the image to the size of the widget."""
+        """
+        Fits the image to the size of the widget.
+        """
         try:
             self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         except Exception as err:
             self.console.append_text("ERROR: fit_to_widget: {}".format(err.args))
 
     def start_playback(self):
+        """
+        Starts the playback of the image sequence.
+        """
         try:
             if self.image_sequence:
                 self.timer.start(1000 / self.control.get_fps_value())  # 30 frames per second
@@ -80,6 +114,9 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: start_playback: {}".format(err.args))
 
     def stop_playback(self):
+        """
+        Stops the playback of the image sequence.
+        """
         self.timer.stop()
         self.is_playing = False
         self.console.append_text("INFO: Playback Stopped.")
@@ -98,6 +135,9 @@ class PlaybackWidget(QWidget):
             self.start_playback()
 
     def set_frame_number(self):
+        """
+        Sets the current frame number.
+        """
         try:
             if not self.is_playing:
                 if self.current_frame >= len(self.image_sequence):
@@ -111,6 +151,9 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: set_frame_number: {}".format(err.args))
 
     def update_frame(self):
+        """
+        Updates the current frame.
+        """
         try:
             if self.current_frame >= len(self.image_sequence):
                 self.current_frame = 0
@@ -127,6 +170,12 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: update_frame: {}".format(err.args))
 
     def wheelEvent(self, event):
+        """
+        Handles the wheel event.
+
+        Args:
+            event (QWheelEvent): The wheel event object.
+        """
         try:
             if event.modifiers() == Qt.ControlModifier:
                 if not self.image_sequence:
@@ -169,6 +218,12 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: wheelEvent: {}".format(err.args))
 
     def mousePressEvent(self, event):
+        """
+        Handles the mouse press event.
+
+        Args:
+            event (QMouseEvent): The mouse event object.
+        """
         try:
             if event.button() == Qt.LeftButton:
                 self.drag_origin = event.pos()
@@ -177,6 +232,12 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: mousePressEvent: {}".format(err.args))
 
     def mouseMoveEvent(self, event):
+        """
+        Handles the mouse move event.
+
+        Args:
+            event (QMouseEvent): The mouse event object.
+        """
         try:
             if self.dragging:
                 delta = event.pos() - self.drag_origin
@@ -187,6 +248,12 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: mouseMoveEvent: {}".format(err.args))
 
     def mouseReleaseEvent(self, event):
+        """
+        Handles the mouse release event.
+
+        Args:
+            event (QMouseEvent): The mouse event object.
+        """
         try:
             if event.button() == Qt.LeftButton:
                 self.dragging = False
@@ -194,6 +261,15 @@ class PlaybackWidget(QWidget):
             self.console.append_text("ERROR: mouseReleaseEvent: {}".format(err.args))
 
     def zoomed_pixmap(self, pixmap):
+        """
+        Applies zooming to the pixmap.
+
+        Args:
+            pixmap (QPixmap): The pixmap object.
+
+        Returns:
+            QPixmap: The zoomed pixmap.
+        """
         try:
             if self.zoom_factor != 1.0:
                 transform = QTransform()
@@ -207,8 +283,14 @@ class PlaybackWidget(QWidget):
 
     @property
     def minimum_zoom(self):
+        """
+        float: The minimum zoom factor.
+        """
         return 0.1  # Adjust the minimum zoom factor as desired
 
     @property
     def maximum_zoom(self):
+        """
+        float: The maximum zoom factor.
+        """
         return 5.0  # Adjust the maximum zoom factor as desired

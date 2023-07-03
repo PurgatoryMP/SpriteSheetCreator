@@ -1,8 +1,19 @@
-
-
 class ScriptGenerator():
-    def __init__(self):
+    """
+    A class for generating scripts to animate the sprite sheet.
+    """
 
+    # TODO: Create scripts that support the following:
+    #  LSL:
+    #   llTextureAnimation()
+    #   llSetLinkPrimitiveParamsFast()
+    #  Python: for TK and QT5
+    #  GDScript
+    #  C# for unity
+    #  C++ for Unreal.
+
+    def __init__(self):
+        pass
 
     def generate_lsl_script(self) -> str:
         """

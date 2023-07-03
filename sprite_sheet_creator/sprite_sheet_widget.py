@@ -233,6 +233,17 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: display_sprite_sheet: {}".format(err.args))
 
+    def get_generated_sprite_sheet(self):
+        """
+        Gets the generated sprite sheet image.
+        """
+        try:
+            if self.images:
+                pixmap = QPixmap(self.sprite_sheet)
+                return pixmap
+        except Exception as err:
+            self.console.append_text("ERROR: display_sprite_sheet: {}".format(err.args))
+
     def wheelEvent(self, event) -> None:
         """
         Handles the wheel event for zooming the sprite sheet.

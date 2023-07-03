@@ -9,9 +9,13 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 
 
 class ImportExporter():
-    def __init__(self, main_console_widget):
+    def __init__(self, main_console_widget, control_widget):
+        self.path = None
         self.console = main_console_widget
         self.console.append_text("INFO: Loading Import/Exporter functions.----------------")
+
+        self.control = control_widget
+
         self.image_sequence = []
 
         self.console.append_text("INFO: Finished Loading Import/Exporter functions.")
@@ -32,45 +36,43 @@ class ImportExporter():
         except Exception as err:
             self.console.append_text(str(err.args))
 
-    # def export_sprite_sheet(self) -> None:
-    #     """
-    #     Save the sprite sheet image as a PNG file.
-    #
-    #     The image is saved based on the provided parameters and user input.
-    #
-    #     Returns:
-    #         None
-    #     """
-    #     try:
-    #         if self.image_sequence:
-    #             # Convert the pixmap of the sprite sheet widget to a QImage
-    #             sprite_sheet_image = QImage(self.sprite_sheet_widget.pixmap().toImage())
-    #
-    #             # Calculate the number of rows and columns in the sprite sheet
-    #             num_rows = int(len(self.image_sequence[
-    #                                int(self.start_frame_input.text()):int(self.end_frame_input.text()) + 1]) ** 0.5)
-    #             num_columns = num_rows
-    #
-    #             # Calculate the frame range and frames per second (fps)
-    #             frame_range = int(self.end_frame_input.text()) - int(self.start_frame_input.text()) + 1
-    #             fps = int(self.fps_input.text())
-    #
-    #             # Generate the filename based on the parameters
-    #             filename = f"SheetName_000_{num_rows}_{num_columns}_{frame_range}_{fps}.png"
-    #
-    #             # Open a file dialog to get the save file path
-    #             file_path, _ = QFileDialog.getSaveFileName(self, "Save Image As", filename, filter="PNG Image (*.png)")
-    #             if file_path:
-    #                 # Save the sprite sheet image to the specified file path
-    #                 sprite_sheet_image.save(file_path)
-    #
-    #                 # open a popup dialog with a button the user can click to open the output directory in the file explorer.
-    #                 self.path = os.path.dirname(file_path)
-    #                 self.open_dialog(self.path)
-    #
-    #     except Exception as err:
-    #         # Handle any exceptions and print the error message
-    #         self.debug(str(err.args))
+    def export_sprite_sheet(self, pixmap_image) -> None:
+        """
+        Save the sprite sheet image as a PNG file.
+
+        The image is saved based on the provided parameters and user input.
+
+        Returns:
+            None
+        """
+        try:
+            if pixmap_image:
+                # Convert the pixmap of the sprite sheet widget to a QImage
+                # sprite_sheet_image = QImage(pixmap_image.pixmap().toImage())
+
+                # Calculate the number of rows and columns in the sprite sheet
+                num_rows = self.control.get_grid_rows_value()
+                num_columns = self.control.get_grid_columns_value()
+
+                # Calculate the frame range and frames per second (fps)
+                frame_range = self.control.get_end_frame_value() - self.control.get_start_frame_value()
+                fps = self.control.get_fps_value()
+
+                # Generate the filename based on the parameters
+                filename = f"SheetName_000_{num_rows}_{num_columns}_{frame_range}_{fps}.png"
+
+                # Open a file dialog to get the save file path
+                file_path, _ = QFileDialog.getSaveFileName(caption=filename, directory=filename, filter="PNG Image (*.png)")
+                if file_path:
+                    # Save the sprite sheet image to the specified file path
+                    pixmap_image.save(file_path)
+
+                    # open a popup dialog with a button the user can click to open the output directory in the file explorer.
+                    self.path = os.path.dirname(file_path)
+                    os.startfile(self.path)
+
+        except Exception as err:
+            self.console.append_text("ERROR: export_sprite_sheet: {}".format(err.args))
     #
     # def import_as_gif(self) -> None:
     #     """

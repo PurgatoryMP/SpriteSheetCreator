@@ -19,6 +19,10 @@ from higherarchy_widget import FileTableWidget
 from image_generator import ImageGenerator
 
 
+# TODO: Make it so user can modify the order of the frames in the image sequence.
+# TODO: Make it so the user can inject or append a frame or sequence into the existing sequence.
+
+
 class MainWindow(QMainWindow):
     """The main window of the application."""
 
@@ -105,10 +109,14 @@ class MainWindow(QMainWindow):
         playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         playback_widget_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
+        self.import_export = ImportExporter(self.main_console_widget, self.control_widget)
+
         # # Setup the menu bar
         self.menu_bar = MenuBar(self.main_console_widget)
         # Connect the menu bar signal using instance
         self.menu_bar.importimagesequence.connect(self.import_image_sequence)
+
+        self.menu_bar.exportspritesheet.connect(self.export_sprite_sheet)
 
         # TODO: Plugin the functions for these menu options
         # self.menu_bar.importgiffile.connect(self.import_image_sequence)
@@ -169,7 +177,7 @@ class MainWindow(QMainWindow):
 
         self.main_console_widget.append_text("INFO: Finished loading all widgets.\n")
 
-    def open_file_path(self, file_path):
+    def open_file_path(self, file_path) -> None:
         """
         Open the file path in the default system application.
 
@@ -182,7 +190,7 @@ class MainWindow(QMainWindow):
             if directory:
                 os.startfile(directory)
 
-    def handle_image_clicked(self, image_path):
+    def handle_image_clicked(self, image_path) -> None:
         """
         Handle the image click event.
 
@@ -196,19 +204,44 @@ class MainWindow(QMainWindow):
         except Exception as err:
             self.main_console_widget.append_text(str(err.args))
 
-    def handle_image_path_clicked(self, image_path):
+    def handle_image_path_clicked(self, image_path) -> None:
+        """
+        Handles the click event for an image path.
+
+        Args:
+            self: The instance of the class.
+            image_path (str): The path of the image to be opened.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         if image_path:
             try:
                 os.startfile(image_path)
             except Exception as err:
                 self.main_console_widget.append_text("ERROR: {}".format(err.args))
 
-    def import_image_sequence(self):
+    def import_image_sequence(self) -> None:
+        """Imports an image sequence and populates the widgets.
+
+        This method imports an image sequence using the ImportExporter class.
+        The widgets in the application are then populated with the images
+        contained in the selected directory.
+
+        Returns:
+            None
+
+        Raises:
+            <Specify any exceptions that can be raised>
+
+        """
         # Implement the logic to import the image sequence here
         # Populate the widgets with the images contained in the selected directory
 
-        importer = ImportExporter(self.main_console_widget)
-        self.image_sequence = importer.import_image_sequence()
+        self.image_sequence = self.import_export.import_image_sequence()
 
         self.statusBar.set_total_frame_text(str(len(self.image_sequence)))
 
@@ -226,7 +259,20 @@ class MainWindow(QMainWindow):
         self.sprite_sheet_widget.load_images(self.image_sequence)
         self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
 
-    def get_memory_usage(self):
+    def export_sprite_sheet(self):
+        sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()
+        self.import_export.export_sprite_sheet(sprite_sheet)
+
+    def get_memory_usage(self) -> None:
+        """
+        Retrieves the current memory usage of the process and displays it in a human-readable format.
+
+        Returns:
+            None
+
+        Raises:
+            Exception: If an error occurs while retrieving or displaying the memory usage.
+        """
         try:
             # Get the current process ID
             pid = psutil.Process()
@@ -245,7 +291,7 @@ class MainWindow(QMainWindow):
         except Exception as err:
             self.main_console_widget.append_text(str(err.args))
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event) -> None:
         """
         Triggered when the main window is resized by the user.
         """
@@ -254,7 +300,7 @@ class MainWindow(QMainWindow):
         # Start or restart the resize timer
         self.resize_timer.start()
 
-    def report_size(self):
+    def report_size(self) -> None:
         """
         Report the current size of the main window.
 
@@ -271,7 +317,7 @@ class MainWindow(QMainWindow):
         self.image_viewer_widget.fit_to_widget()
         self.playback_widget.fit_to_widget()
 
-    def exit_application(self):
+    def exit_application(self) -> None:
         """
         Exit the application gracefully.
 
