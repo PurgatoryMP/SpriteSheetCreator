@@ -242,22 +242,22 @@ class MainWindow(QMainWindow):
         # Populate the widgets with the images contained in the selected directory
 
         self.image_sequence = self.import_export.import_image_sequence()
+        if self.image_sequence:
+            self.statusBar.set_total_frame_text(str(len(self.image_sequence)))
 
-        self.statusBar.set_total_frame_text(str(len(self.image_sequence)))
+            self.main_console_widget.append_text("INFO: Image Sequence Loaded.")
 
-        self.main_console_widget.append_text("INFO: Image Sequence Loaded.")
+            self.image_sequence_widget.load_sequence(self.image_sequence)
+            self.main_console_widget.append_text("INFO: Image sequence set on Image Sequence Widget.")
 
-        self.image_sequence_widget.load_sequence(self.image_sequence)
-        self.main_console_widget.append_text("INFO: Image sequence set on Image Sequence Widget.")
+            self.image_viewer_widget.load_image(self.image_sequence, 0)
+            self.main_console_widget.append_text("INFO: Image set on Image Viewer Widget")
 
-        self.image_viewer_widget.load_image(self.image_sequence, 0)
-        self.main_console_widget.append_text("INFO: Image set on Image Viewer Widget")
+            self.playback_widget.load_image_sequence(self.image_sequence)
+            self.main_console_widget.append_text("INFO: Image sequence set on Playback Widget.")
 
-        self.playback_widget.load_image_sequence(self.image_sequence)
-        self.main_console_widget.append_text("INFO: Image sequence set on Playback Widget.")
-
-        self.sprite_sheet_widget.load_images(self.image_sequence)
-        self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
+            self.sprite_sheet_widget.load_images(self.image_sequence)
+            self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
 
     def export_sprite_sheet(self):
         sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()

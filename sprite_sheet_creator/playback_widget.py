@@ -106,7 +106,10 @@ class PlaybackWidget(QWidget):
         """
         try:
             if self.image_sequence:
-                self.timer.start(1000 / self.control.get_fps_value())  # 30 frames per second
+
+                playback_speed = 1000 / self.control.get_fps_value()
+
+                self.timer.start(int(playback_speed))  # 30 frames per second
                 self.is_playing = True
                 self.console.append_text("INFO: Playback Started.")
                 self.status.set_status_text("Playing Sequence.")

@@ -14,6 +14,8 @@ __pycache__/
 .idea/
 .vscode/
 venv/
+dist/
+build/
 
 # Windows junk
 *Thumbs.db

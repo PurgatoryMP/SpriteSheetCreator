@@ -56,6 +56,7 @@ class ImportExporter():
 
                 # Calculate the frame range and frames per second (fps)
                 frame_range = self.control.get_end_frame_value() - self.control.get_start_frame_value()
+
                 fps = self.control.get_fps_value()
 
                 # Generate the filename based on the parameters
