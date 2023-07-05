@@ -14,11 +14,11 @@ class ImageGenerator():
         This constructor sets up the necessary directories and file paths for image generation.
         """
         # Define the temp file directory so its easy to clean up temp files when done.
-        self.temp_directory = "{}\{}".format(tempfile.gettempdir(), "SuperSpriteTemp")
+        self.temp_directory = "{}/{}".format(tempfile.gettempdir(), "SuperSprite_Temp")
         if not os.path.exists(self.temp_directory):
             os.mkdir(self.temp_directory)
 
-        self.checker_alpha_save_path = "{}\{}".format(self.temp_directory, "Checkered_Alpha.png")
+        self.checker_alpha_save_path = "{}/{}".format(self.temp_directory, "Checkered_Alpha.png")
 
     def get_checker_pattern(self) -> str:
         """

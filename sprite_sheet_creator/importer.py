@@ -1,9 +1,10 @@
 import os
+import shutil
 import tempfile
 from pathlib import Path
 
 from PIL.Image import Image
-from PyQt5.QtGui import QImage
+from PyQt5.QtGui import QImage, QImageReader
 from PyQt5.QtWidgets import QFileDialog
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
@@ -18,8 +19,22 @@ class ImportExporter():
 
         self.image_sequence = []
 
+        self.temp_directory = "{}/{}".format(tempfile.gettempdir(), "SuperSprite_Temp")
+        if not os.path.exists(self.temp_directory):
+            os.mkdir(self.temp_directory)
+
         self.console.append_text("INFO: Finished Loading Import/Exporter functions.")
 
+    def clean_up_temp_directory(self) -> None:
+        """
+        Deletes the temp directory for this tool.
+        """
+        try:
+            if os.path.exists(self.temp_directory) and os.path.isdir(self.temp_directory):
+                shutil.rmtree(self.temp_directory)
+        except Exception as err:
+            print(err.args)
+            self.console.append_text("ERROR: clean_up_temp_directory: {}".format(err.args))
 
     def import_image_sequence(self) -> list:
         """
@@ -34,7 +49,7 @@ class ImportExporter():
                 self.image_sequence = sorted([str(os.path.join(directory, filename)).replace("\\", "/") for filename in os.listdir(directory)], key=os.path.getctime)
                 return self.image_sequence
         except Exception as err:
-            self.console.append_text(str(err.args))
+            self.console.append_text("ERROR: import_image_sequence: {}".format(err.args))
 
     def export_sprite_sheet(self, pixmap_image) -> None:
         """
@@ -74,40 +89,78 @@ class ImportExporter():
 
         except Exception as err:
             self.console.append_text("ERROR: export_sprite_sheet: {}".format(err.args))
-    #
-    # def import_as_gif(self) -> None:
-    #     """
-    #     Imports a gif file and converts it to an image sequence.
-    #     """
-    #     gif_path, _ = QFileDialog.getOpenFileName(self, "Graphics Interchange Files", "", "Gif Files (*.gif)")
-    #
-    #     temp_dir = tempfile.mkdtemp(prefix='SSC_temp_', dir=tempfile.gettempdir())
-    #     print(temp_dir)
-    #
-    #     if gif_path:
-    #         # Convert gif to an image sequence
-    #         gif = Image.open(gif_path)
-    #         frames = []
-    #         try:
-    #             while True:
-    #                 frames.append(gif.copy())
-    #                 gif.seek(len(frames))  # Move to the next frame
-    #         except EOFError:
-    #             pass
-    #
-    #         for i, frame in enumerate(frames):
-    #             output_path = f"{temp_dir}/{i}.png"
-    #             frame.save(output_path, "PNG")
-    #
-    #         image_files = list(Path(temp_dir).glob("*.png")) + list(Path(temp_dir).glob("*.jpg"))
-    #         self.image_sequence = [os.path.join(temp_dir, file) for file in image_files]
-    #
-    #         self.image_sequence.sort()
-    #         print("\n".join(self.image_sequence))
-    #
-    #         self.populate_widgets(self.image_sequence)
-    #         print("import_as_gif")
-    #
+
+    def import_as_gif(self) -> list:
+        """
+        Imports a gif file and converts it to an image sequence.
+        """
+        try:
+            converted_path = []
+            gif_path, _ = QFileDialog.getOpenFileName(caption="Graphics Interchange Files", filter="Gif Files (*.gif)")
+
+            # temp_dir = tempfile.mkdtemp(prefix='SSC_temp_', dir=tempfile.gettempdir())
+            # print(temp_dir)
+
+            # Load the GIF file using QImageReader
+            gif_reader = QImageReader(gif_path)
+            gif_reader.setDecideFormatFromContent(True)
+            frame_count = gif_reader.imageCount()
+
+            # Create the output directory if it doesn't exist
+            output_dir = "{}/{}".format(self.temp_directory, "converted")
+
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
+            if os.path.exists(output_dir) and os.path.isdir(output_dir):
+                shutil.rmtree(output_dir)
+                os.makedirs(output_dir)
+
+            # Iterate over each frame of the GIF and save as separate images
+            for frame_index in range(frame_count):
+                gif_reader.jumpToImage(frame_index)
+                image = gif_reader.read()
+
+                # Generate the output file path for the current frame
+                output_path = os.path.join(output_dir, f"{frame_index}.png")
+
+                # Save the image as PNG
+                image.save(output_path)
+                converted_path.append(output_path.replace("\\", "/"))
+
+                print(f"Frame {frame_index} saved as {output_path}")
+
+            self.image_sequence = converted_path
+            return self.image_sequence
+        except Exception as err:
+            self.console.append_text("ERROR: import_as_gif: {}".format(err.args))
+
+
+
+        # if gif_path:
+        #     # Convert gif to an image sequence
+        #     gif = Image.open(gif_path)
+        #     frames = []
+        #     try:
+        #         while True:
+        #             frames.append(gif.copy())
+        #             gif.seek(len(frames))  # Move to the next frame
+        #     except EOFError:
+        #         pass
+        #
+        #     for i, frame in enumerate(frames):
+        #         output_path = f"{temp_dir}/{i}.png"
+        #         frame.save(output_path, "PNG")
+        #
+        #     image_files = list(Path(temp_dir).glob("*.png")) + list(Path(temp_dir).glob("*.jpg"))
+        #     self.image_sequence = [os.path.join(temp_dir, file) for file in image_files]
+        #
+        #     self.image_sequence.sort()
+        #     print("\n".join(self.image_sequence))
+        #
+        #     self.populate_widgets(self.image_sequence)
+        #     print("import_as_gif")
+
     # def export_as_gif(self) -> None:
     #     """
     #     exports a gif file which is the image sequence.

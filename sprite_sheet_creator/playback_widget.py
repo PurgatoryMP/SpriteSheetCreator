@@ -158,8 +158,12 @@ class PlaybackWidget(QWidget):
         Updates the current frame.
         """
         try:
+            # if self.current_frame >= len(self.image_sequence):
             if self.current_frame >= len(self.image_sequence):
-                self.current_frame = 0
+                self.current_frame = self.control.get_start_frame_value()
+
+            if self.current_frame >= self.control.get_end_frame_value():
+                self.current_frame = self.control.get_start_frame_value()
 
             image = self.image_sequence[self.current_frame]
             pixmap = QPixmap.fromImage(image)

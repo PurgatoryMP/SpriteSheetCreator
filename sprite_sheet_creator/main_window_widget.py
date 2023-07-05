@@ -2,12 +2,13 @@ import os
 import sys
 
 import psutil
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget, QSizeGrip
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
+from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
 
 import style_sheet
 from console_widget import ConsoleWidget
 from controls_widget import ControlWidget
+from higherarchy_widget import FileTableWidget
 from image_grid_widget import ImageSequenceWidget
 from image_viewer_widget import ImageViewerWidget
 from importer import ImportExporter
@@ -15,12 +16,14 @@ from menu_bar_widget import MenuBar
 from playback_widget import PlaybackWidget
 from sprite_sheet_widget import SpriteSheetWidget
 from status_bar_widget import StatusBar
-from higherarchy_widget import FileTableWidget
-from image_generator import ImageGenerator
 
 
 # TODO: Make it so user can modify the order of the frames in the image sequence.
 # TODO: Make it so the user can inject or append a frame or sequence into the existing sequence.
+
+# Custom class to define a signal
+class ExitSignal(QObject):
+    exit_signal = pyqtSignal()
 
 
 class MainWindow(QMainWindow):
@@ -37,6 +40,12 @@ class MainWindow(QMainWindow):
 
         """
         super().__init__()
+
+        # Create an instance of the custom signal class
+        self.exit_signal = ExitSignal()
+
+        # Connect the custom signal to your desired function
+        self.exit_signal.exit_signal.connect(self.exit_application)
 
         # Set window title
         self.image_sequence = None
@@ -115,6 +124,7 @@ class MainWindow(QMainWindow):
         self.menu_bar = MenuBar(self.main_console_widget)
         # Connect the menu bar signal using instance
         self.menu_bar.importimagesequence.connect(self.import_image_sequence)
+        self.menu_bar.importgiffile.connect(self.import_gif)
 
         self.menu_bar.exportspritesheet.connect(self.export_sprite_sheet)
 
@@ -242,22 +252,38 @@ class MainWindow(QMainWindow):
         # Populate the widgets with the images contained in the selected directory
 
         self.image_sequence = self.import_export.import_image_sequence()
-        if self.image_sequence:
-            self.statusBar.set_total_frame_text(str(len(self.image_sequence)))
+        self.populate_image_sequence(self.image_sequence)
 
-            self.main_console_widget.append_text("INFO: Image Sequence Loaded.")
+    def import_gif(self) -> None:
+        """
+        Imports an image sequence after converting a selected gif.
+        """
+        self.image_sequence = self.import_export.import_as_gif()
+        self.populate_image_sequence(self.image_sequence)
 
-            self.image_sequence_widget.load_sequence(self.image_sequence)
-            self.main_console_widget.append_text("INFO: Image sequence set on Image Sequence Widget.")
+    def populate_image_sequence(self, image_sequence):
 
-            self.image_viewer_widget.load_image(self.image_sequence, 0)
-            self.main_console_widget.append_text("INFO: Image set on Image Viewer Widget")
+        try:
+            if image_sequence:
+                self.statusBar.set_total_frame_text(str(len(image_sequence)))
 
-            self.playback_widget.load_image_sequence(self.image_sequence)
-            self.main_console_widget.append_text("INFO: Image sequence set on Playback Widget.")
+                self.main_console_widget.append_text("INFO: Image Sequence Loaded.")
 
-            self.sprite_sheet_widget.load_images(self.image_sequence)
-            self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
+                self.image_sequence_widget.load_sequence(image_sequence)
+                self.main_console_widget.append_text("INFO: Image sequence set on Image Sequence Widget.")
+
+                self.image_viewer_widget.load_image(image_sequence, 0)
+                self.main_console_widget.append_text("INFO: Image set on Image Viewer Widget")
+
+                self.playback_widget.load_image_sequence(image_sequence)
+                self.main_console_widget.append_text("INFO: Image sequence set on Playback Widget.")
+
+                self.sprite_sheet_widget.load_images(image_sequence)
+                self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
+            else:
+                self.main_console_widget.append_text("WARNING: populate_image_sequence: Nothing selected.")
+        except Exception as err:
+            self.main_console_widget.append_text("ERROR: populate_image_sequence: {}".format(err.args))
 
     def export_sprite_sheet(self):
         sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()
@@ -317,13 +343,14 @@ class MainWindow(QMainWindow):
         self.image_viewer_widget.fit_to_widget()
         self.playback_widget.fit_to_widget()
 
-    def exit_application(self) -> None:
+    def exit_application(self):
         """
         Exit the application gracefully.
 
         This method is called when the application is exiting.
 
         """
+        self.import_export.clean_up_temp_directory()
         self.close()
 
 
@@ -334,6 +361,8 @@ if __name__ == "__main__":
     # Create and show the main window
     window = MainWindow()
     window.show()
+
+    app.aboutToQuit.connect(window.exit_signal.exit_signal.emit)
 
     # Start the event loop
     sys.exit(app.exec_())
