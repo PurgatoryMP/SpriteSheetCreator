@@ -125,8 +125,8 @@ class MainWindow(QMainWindow):
         # Connect the menu bar signal using instance
         self.menu_bar.importimagesequence.connect(self.import_image_sequence)
         self.menu_bar.importgiffile.connect(self.import_gif)
-
         self.menu_bar.exportspritesheet.connect(self.export_sprite_sheet)
+        self.menu_bar.exportgiffile.connect(self.export_gif)
 
         # TODO: Plugin the functions for these menu options
         # self.menu_bar.importgiffile.connect(self.import_image_sequence)
@@ -250,7 +250,7 @@ class MainWindow(QMainWindow):
         """
         # Implement the logic to import the image sequence here
         # Populate the widgets with the images contained in the selected directory
-
+        self.image_sequence = []
         self.image_sequence = self.import_export.import_image_sequence()
         self.populate_image_sequence(self.image_sequence)
 
@@ -258,11 +258,23 @@ class MainWindow(QMainWindow):
         """
         Imports an image sequence after converting a selected gif.
         """
+        self.image_sequence = []
         self.image_sequence = self.import_export.import_as_gif()
         self.populate_image_sequence(self.image_sequence)
 
-    def populate_image_sequence(self, image_sequence):
+    def export_gif(self):
+        """
+        Exports the image sequence as a .gif
+        """
+        self.import_export.export_as_gif(self.image_sequence)
 
+    def populate_image_sequence(self, image_sequence):
+        """
+        Populates all the widgets with the image sequence.
+
+        Args:
+            image_sequence: (list): The list containing the image sequence.
+        """
         try:
             if image_sequence:
                 self.statusBar.set_total_frame_text(str(len(image_sequence)))
@@ -288,6 +300,7 @@ class MainWindow(QMainWindow):
     def export_sprite_sheet(self):
         sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()
         self.import_export.export_sprite_sheet(sprite_sheet)
+
 
     def get_memory_usage(self) -> None:
         """

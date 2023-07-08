@@ -9,7 +9,7 @@ from image_generator import ImageGenerator
 def get_style():
 
     generator = ImageGenerator()
-    transparent_checkered_background = generator.get_checker_pattern()
+    transparent_checkered_background = str(generator.get_checker_pattern()).replace("\\", "/")
     print(transparent_checkered_background)
 
     style_settings = {

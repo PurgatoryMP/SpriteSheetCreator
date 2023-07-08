@@ -3,10 +3,11 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from PIL.Image import Image
-from PyQt5.QtGui import QImage, QImageReader
+from PyQt5.QtCore import Qt, QByteArray, QSize
+from PyQt5.QtGui import QImage, QImageReader, QMovie, QPixmap, QImageWriter
 from PyQt5.QtWidgets import QFileDialog
 from moviepy.video.io.VideoFileClip import VideoFileClip
+from PIL import Image
 
 
 class ImportExporter():
@@ -42,7 +43,7 @@ class ImportExporter():
         """
         try:
             # Open file dialog to select directory
-            directory = QFileDialog.getExistingDirectory()
+            directory = QFileDialog.getExistingDirectory(caption="Select Sequence Directory.")
             if directory:
                 # Retrieve image files from the selected directory and sort them by creation time.
                 # This keeps the frames in the correct order regardless of name.
@@ -62,9 +63,6 @@ class ImportExporter():
         """
         try:
             if pixmap_image:
-                # Convert the pixmap of the sprite sheet widget to a QImage
-                # sprite_sheet_image = QImage(pixmap_image.pixmap().toImage())
-
                 # Calculate the number of rows and columns in the sprite sheet
                 num_rows = self.control.get_grid_rows_value()
                 num_columns = self.control.get_grid_columns_value()
@@ -97,9 +95,6 @@ class ImportExporter():
         try:
             converted_path = []
             gif_path, _ = QFileDialog.getOpenFileName(caption="Graphics Interchange Files", filter="Gif Files (*.gif)")
-
-            # temp_dir = tempfile.mkdtemp(prefix='SSC_temp_', dir=tempfile.gettempdir())
-            # print(temp_dir)
 
             # Load the GIF file using QImageReader
             gif_reader = QImageReader(gif_path)
@@ -135,77 +130,70 @@ class ImportExporter():
         except Exception as err:
             self.console.append_text("ERROR: import_as_gif: {}".format(err.args))
 
+    from PyQt5.QtWidgets import QFileDialog
+    from PyQt5.QtGui import QMovie, QImage, QPainter
+    from PyQt5.QtCore import Qt
+    import os
+
+    from PyQt5.QtWidgets import QFileDialog
+    from PyQt5.QtGui import QMovie, QPixmap
+    from PyQt5.QtCore import Qt
+    import os
+
+    from PyQt5.QtWidgets import QFileDialog
+    from PyQt5.QtGui import QImageWriter
+    import os
+
+    def export_as_gif(self, image_sequence) -> None:
+        """
+        Exports a gif of the image sequence.
+
+        Args:
+            image_sequence: (list): A collection of file paths to the frames of the image sequence.
+        """
+        try:
+            start_frame = self.control.get_start_frame_value()
+            end_frame = self.control.get_end_frame_value()
+
+            # Calculate the number of rows and columns in the sprite sheet
+            # num_rows = self.control.get_grid_rows_value()
+            # num_columns = self.control.get_grid_columns_value()
+
+            # Calculate the frame range and frames per second (fps)
+            # frame_range = end_frame - start_frame
+
+            # fps = self.control.get_fps_value()
+            filename = f"GifName_000.gif"
+
+            # The image sequence
+            sequence = image_sequence[start_frame:end_frame]
+
+            # Open a file dialog to get the save file path
+            save_path, _ = QFileDialog.getSaveFileName(caption="Save Gif file", directory=filename,
+                                                       filter="GIF Files (*.gif)")
+
+            if save_path and sequence:
+                images = []
+                for file_path in sequence:
+                    if os.path.exists(file_path):
+                        image = Image.open(file_path)
+                        images.append(image)
+
+                if images:
+                    images[0].save(save_path,
+                                   format='GIF',
+                                   save_all=True,
+                                   append_images=images[1:],
+                                   duration=100,  # Set the duration between frames (in milliseconds)
+                                   loop=0,
+                                   disposal=2,
+                                   background=255)
+            else:
+                print("WARNING: export_as_gif: Image sequence not provided.")
+        except Exception as err:
+            self.console.append_text("ERROR: export_as_gif: {}".format(err.args))
 
 
-        # if gif_path:
-        #     # Convert gif to an image sequence
-        #     gif = Image.open(gif_path)
-        #     frames = []
-        #     try:
-        #         while True:
-        #             frames.append(gif.copy())
-        #             gif.seek(len(frames))  # Move to the next frame
-        #     except EOFError:
-        #         pass
-        #
-        #     for i, frame in enumerate(frames):
-        #         output_path = f"{temp_dir}/{i}.png"
-        #         frame.save(output_path, "PNG")
-        #
-        #     image_files = list(Path(temp_dir).glob("*.png")) + list(Path(temp_dir).glob("*.jpg"))
-        #     self.image_sequence = [os.path.join(temp_dir, file) for file in image_files]
-        #
-        #     self.image_sequence.sort()
-        #     print("\n".join(self.image_sequence))
-        #
-        #     self.populate_widgets(self.image_sequence)
-        #     print("import_as_gif")
-
-    # def export_as_gif(self) -> None:
-    #     """
-    #     exports a gif file which is the image sequence.
-    #     """
-    #     try:
-    #         if self.image_sequence:
-    #             images = []
-    #             file_names = self.image_sequence[
-    #                          int(self.start_frame_input.text()):int(self.end_frame_input.text()) + 1]
-    #
-    #             # print("\n".join(file_names))
-    #
-    #             for file_path in file_names:
-    #                 print(file_path)
-    #                 if os.path.exists(file_path):
-    #                     try:
-    #                         with Image.open(file_path) as image:
-    #                             if image.mode != 'RGBA':
-    #                                 image = image.convert('RGBA')
-    #                             images.append(image.copy())
-    #                     except IOError:
-    #                         pass
-    #
-    #             if images:
-    #                 save_path, _ = QFileDialog.getSaveFileName(self, "Save As",
-    #                                                            f"Gif_{str(int(self.start_frame_input.text()) + int(self.end_frame_input.text()) + 1)}_{self.fps_input.text()}",
-    #                                                            filter="GIF Files (*.gif)")
-    #                 if save_path:
-    #                     frame_duration = 1000 / int(self.fps_input.text())
-    #                     print(frame_duration)
-    #                     images[0].save(save_path,
-    #                                    format='GIF',
-    #                                    save_all=True,
-    #                                    append_images=images[1:],
-    #                                    duration=10,
-    #                                    loop=0,
-    #                                    disposal=2,
-    #                                    background=255)
-    #                     self.path = os.path.dirname(save_path)
-    #                     self.open_dialog(self.path)
-    #         else:
-    #             print("Image sequence not provided.")
-    #     except Exception as err:
-    #         self.debug(str(err.args))
-    #
     # def import_as_mp4(self) -> None:
     #     """
     #     Imports a .MP4 file and converts it to an image sequence.
