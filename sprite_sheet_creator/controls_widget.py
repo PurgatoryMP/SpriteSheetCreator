@@ -37,7 +37,8 @@ class ControlWidget(QWidget):
     imageheightValueChanged = pyqtSignal(int)
     playClicked = pyqtSignal()
     stopClicked = pyqtSignal()
-    checkboxStateChanged = pyqtSignal(bool)
+    use_grid_checkboxStateChanged = pyqtSignal(bool)
+    use_scale_checkboxStateChanged = pyqtSignal(bool)
 
     def __init__(self, main_console_widget):
         """Initialize the ControlWidget.
@@ -123,15 +124,20 @@ class ControlWidget(QWidget):
         # set the initial value for the Frame Number to 0
         self.frame_number_display.setValue(0)
 
-        self.checkbox = QCheckBox("Grid Overlay")
-        self.checkbox.setChecked(True)
+        self.use_grid_checkbox = QCheckBox("Grid Overlay")
+        self.use_grid_checkbox.setChecked(True)
+
+        self.use_scale_checkbox = QCheckBox("Use Scale")
+        self.use_scale_checkbox.setChecked(True)
 
         self.console.append_text("INFO: Control Settings:-------------")
-        self.console.append_text("INFO: FPS = 24")
-        self.console.append_text("INFO: Grid Rows = 8")
-        self.console.append_text("INFO: Grid Columns = 8")
-        self.console.append_text("INFO: sprite sheet width = 2048")
-        self.console.append_text("INFO: sprite sheet height = 2048")
+        self.console.append_text("INFO: FPS = {}".format(self.fps_input.value()))
+        self.console.append_text("INFO: Grid Rows = {}".format(self.grid_rows_input.value()))
+        self.console.append_text("INFO: Grid Columns = {}".format(self.grid_columns_input.value()))
+        self.console.append_text("INFO: Grid Overlay = {}".format(self.use_grid_checkbox.isChecked()))
+        self.console.append_text("INFO: Use Scale = {}".format(self.use_scale_checkbox.isChecked()))
+        self.console.append_text("INFO: sprite sheet width = {}".format(self.image_width_input.value()))
+        self.console.append_text("INFO: sprite sheet height = {}".format(self.image_height_input.value()))
 
         separator1 = QLabel("Playback:")
         separator1.setStyleSheet(style_sheet.seperator_label_style())
@@ -171,7 +177,7 @@ class ControlWidget(QWidget):
             (start_frame_label, self.start_frame_input),
             (end_frame_label, self.end_frame_input),
             (separator5, separator6),
-            (self.checkbox, separator7),
+            (self.use_grid_checkbox, self.use_scale_checkbox),
             (grid_rows_label, self.grid_rows_input),
             (grid_columns_label, self.grid_columns_input),
             (image_width_label, self.image_width_input),
@@ -210,7 +216,8 @@ class ControlWidget(QWidget):
         self.grid_columns_input.valueChanged.connect(self.gridcolumnValueChanged.emit)
         self.image_width_input.valueChanged.connect(self.imagewidthValueChanged.emit)
         self.image_height_input.valueChanged.connect(self.imageheightValueChanged.emit)
-        self.checkbox.stateChanged.connect(self.checkboxStateChanged.emit)
+        self.use_grid_checkbox.stateChanged.connect(self.use_grid_checkboxStateChanged.emit)
+        self.use_scale_checkbox.stateChanged.connect(self.use_scale_checkboxStateChanged.emit)
         play_button.clicked.connect(self.playClicked.emit)
         stop_button.clicked.connect(self.stopClicked.emit)
 

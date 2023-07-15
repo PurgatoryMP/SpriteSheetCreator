@@ -150,7 +150,8 @@ class MainWindow(QMainWindow):
         self.control_widget.startframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.endframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
 
-        self.control_widget.checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_grid_overlay)
+        self.control_widget.use_grid_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_grid_overlay)
+        self.control_widget.use_scale_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_use_scale)
 
         self.control_widget.gridrowValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.gridcolumnValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)

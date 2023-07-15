@@ -22,6 +22,7 @@ class SpriteSheetWidget(QWidget):
         self.sprite_sheet = None
         self.images = None
         self.grid_overlay = True
+        self.use_scale = False
         self.console = main_console_widget
         self.control = control_widget
 
@@ -145,6 +146,23 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: calculate_rows_columns: {}".format(err.args))
 
+    def calculate_grid_size(self, file_paths, grid_rows, grid_columns):
+        # if len(file_paths) != grid_rows * grid_columns:
+        #     raise ValueError("Number of files does not match the grid size")
+
+        image_width = 0
+        image_height = 0
+
+        for file_path in file_paths:
+            pixmap = QPixmap(file_path)
+            image_width = max(image_width, pixmap.width())
+            image_height = max(image_height, pixmap.height())
+
+        grid_width = image_width * grid_columns
+        grid_height = image_height * grid_rows
+
+        return grid_width, grid_height
+
     def toggle_grid_overlay(self):
         try:
             if self.grid_overlay:
@@ -153,6 +171,18 @@ class SpriteSheetWidget(QWidget):
                 self.grid_overlay = True
 
             self.console.append_text("INFO: Grid Overlay set to: {}".format(self.grid_overlay))
+            self.update_sprite_sheet()
+        except Exception as err:
+            self.console.append_text("ERROR: toggle_grid_overlay: {}".format(err.args))
+
+    def toggle_use_scale(self):
+        try:
+            if self.use_scale:
+                self.use_scale = False
+            else:
+                self.use_scale = True
+
+            self.console.append_text("INFO: Use Scale set to: {}".format(self.use_scale))
             self.update_sprite_sheet()
         except Exception as err:
             self.console.append_text("ERROR: toggle_grid_overlay: {}".format(err.args))
@@ -170,6 +200,12 @@ class SpriteSheetWidget(QWidget):
             sprite_sheet_height = self.control.get_image_height_value()
 
             rows, columns = self.calculate_rows_columns()
+
+            if self.use_scale:
+                grid_width, grid_height = self.calculate_grid_size(self.images, rows, columns)
+                sprite_sheet_width = grid_width
+                sprite_sheet_height = grid_height
+                self.console.append_text("INFO: Generated Sprite Sheet Scale = {}x{}".format(sprite_sheet_width, sprite_sheet_height))
 
             # Calculate the target width and height for each image
             target_width = sprite_sheet_width // columns
