@@ -201,6 +201,7 @@ def menu_bar_style():
             background-color: #545454;
             font-size: 14px;
             color: White;
+            padding: 4px;
             border: 1px solid Black;
             border-radius: 5px;
         }
@@ -222,6 +223,7 @@ def menu_bar_style():
             qproperty-alignment: AlignCenter;
             background-color: #545454;
             color: White;
+            padding: 4px;
             border: 1px solid Black;
             border-radius: 5px;
         }

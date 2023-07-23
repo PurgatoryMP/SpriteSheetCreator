@@ -1,13 +1,14 @@
 import os
 import shutil
 import tempfile
-from pathlib import Path
 
-from PyQt5.QtCore import Qt, QByteArray, QSize
-from PyQt5.QtGui import QImage, QImageReader, QMovie, QPixmap, QImageWriter
-from PyQt5.QtWidgets import QFileDialog
-from moviepy.video.io.VideoFileClip import VideoFileClip
+
+import cv2
 from PIL import Image
+from PyQt5.QtGui import QImageReader
+from PyQt5.QtWidgets import QFileDialog
+from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
+from moviepy.video.io.VideoFileClip import VideoFileClip
 
 
 class ImportExporter():
@@ -51,6 +52,36 @@ class ImportExporter():
                 return self.image_sequence
         except Exception as err:
             self.console.append_text("ERROR: import_image_sequence: {}".format(err.args))
+
+    def export_image_sequence(self, image_sequence: list) -> None:
+        """
+        Exports the image sequence to the defined directory.
+        """
+        try:
+            if image_sequence:
+                sequence_directory = QFileDialog.getExistingDirectory(caption="Select Sequence Directory.")
+                if sequence_directory:
+
+                    start = self.control.get_start_frame_value() - 1
+                    if start <= 0:
+                        start = 0
+                    end = self.control.get_end_frame_value()
+
+                    for index, image_filepath in enumerate(image_sequence[start:end]):
+                        destination_filepath = os.path.join(sequence_directory, os.path.basename(image_filepath))
+
+                        try:
+                            shutil.copy(image_filepath, destination_filepath)
+                        except FileNotFoundError:
+                            self.console.append_text(f"ERROR: File not found: {image_filepath}")
+                            continue
+
+                self.console.append_text("INFO: Image Sequence Exported: {}".format(sequence_directory))
+            else:
+                self.console.append_text("Warning: Nothing to export.")
+
+        except Exception as err:
+            self.console.append_text("ERROR: export_image_sequence: {}".format(err.args))
 
     def export_sprite_sheet(self, pixmap_image) -> None:
         """
@@ -130,21 +161,7 @@ class ImportExporter():
         except Exception as err:
             self.console.append_text("ERROR: import_as_gif: {}".format(err.args))
 
-    from PyQt5.QtWidgets import QFileDialog
-    from PyQt5.QtGui import QMovie, QImage, QPainter
-    from PyQt5.QtCore import Qt
-    import os
-
-    from PyQt5.QtWidgets import QFileDialog
-    from PyQt5.QtGui import QMovie, QPixmap
-    from PyQt5.QtCore import Qt
-    import os
-
-    from PyQt5.QtWidgets import QFileDialog
-    from PyQt5.QtGui import QImageWriter
-    import os
-
-    def export_as_gif(self, image_sequence) -> None:
+    def export_as_gif(self, image_sequence: list) -> None:
         """
         Exports a gif of the image sequence.
 
@@ -154,23 +171,16 @@ class ImportExporter():
         try:
             start_frame = self.control.get_start_frame_value()
             end_frame = self.control.get_end_frame_value()
-
-            # Calculate the number of rows and columns in the sprite sheet
-            # num_rows = self.control.get_grid_rows_value()
-            # num_columns = self.control.get_grid_columns_value()
-
-            # Calculate the frame range and frames per second (fps)
-            # frame_range = end_frame - start_frame
-
-            # fps = self.control.get_fps_value()
             filename = f"GifName_000.gif"
 
             # The image sequence
             sequence = image_sequence[start_frame:end_frame]
 
             # Open a file dialog to get the save file path
-            save_path, _ = QFileDialog.getSaveFileName(caption="Save Gif file", directory=filename,
-                                                       filter="GIF Files (*.gif)")
+            save_path, _ = QFileDialog.getSaveFileName(
+                caption="Save Gif file",
+                directory=filename,
+                filter="GIF Files (*.gif)")
 
             if save_path and sequence:
                 images = []
@@ -184,7 +194,8 @@ class ImportExporter():
                                    format='GIF',
                                    save_all=True,
                                    append_images=images[1:],
-                                   duration=100,  # Set the duration between frames (in milliseconds)
+                                   #duration=10,  # Set the duration between frames (in milliseconds)
+                                   fps=self.control.get_fps_value(),
                                    loop=0,
                                    disposal=2,
                                    background=255)
@@ -194,126 +205,138 @@ class ImportExporter():
             self.console.append_text("ERROR: export_as_gif: {}".format(err.args))
 
 
-    # def import_as_mp4(self) -> None:
-    #     """
-    #     Imports a .MP4 file and converts it to an image sequence.
-    #     This MP4 may contain audio information. Maybe this can be re-used?
-    #     """
-    #     video_path, _ = QFileDialog.getOpenFileName(self, "Select Video", "", "Video Files (*.mp4)")
-    #
-    #     temp_dir = tempfile.mkdtemp(prefix='SSC_temp_', dir=tempfile.gettempdir())
-    #     print(temp_dir)
-    #
-    #     if video_path:
-    #         video = VideoFileClip(video_path)
-    #         frames = video.iter_frames()
-    #
-    #         for i, frame in enumerate(frames):
-    #             image = Image.fromarray(frame)
-    #             file_name = f"{temp_dir}/{i}.png"
-    #             image.save(file_name)
-    #             print(f"Saved: {file_name}")
-    #
-    #         image_files = list(Path(temp_dir).glob("*.png")) + list(Path(temp_dir).glob("*.jpg"))
-    #         self.image_sequence = [os.path.join(temp_dir, file) for file in image_files]
-    #
-    #         self.image_sequence.sort()
-    #         print("\n".join(self.image_sequence))
-    #
-    #         self.populate_widgets(self.image_sequence)
-    #         print("import_as_gif")
-    #
-    # def export_as_mp4(self) -> None:
-    #     """
-    #     exports the image sequence as a .mp4 file.
-    #     """
-    #     try:
-    #         if self.image_sequence:
-    #             save_path, _ = QFileDialog.getSaveFileName(self, "Save As",
-    #                                                        f"Movie_{str(int(self.start_frame_input.text()) + int(self.end_frame_input.text()) + 1)}_{self.fps_input.text()}",
-    #                                                        filter="MP4 Image (*.mp4)")
-    #
-    #             if save_path:
-    #                 clip = mp.ImageSequenceClip(self.image_sequence, fps=int(self.fps_input.text()))
-    #                 clip.write_videofile(save_path, codec="libx264")
-    #
-    #                 # open a popup dialog with a button the user can click to open the output directory in the file explorer.
-    #                 self.path = os.path.dirname(save_path)
-    #                 self.open_dialog(self.path)
-    #     except Exception as err:
-    #         self.debug(str(err.args))
-    #
-    # def export_as_webm(self):
-    #     """
-    #             exports the image sequence as a .mp4 file.
-    #             """
-    #     try:
-    #         if self.image_sequence:
-    #             save_path, _ = QFileDialog.getSaveFileName(self, "Save As",
-    #                                                        f"Webm_{str(int(self.start_frame_input.text()) + int(self.end_frame_input.text()) + 1)}_{self.fps_input.text()}",
-    #                                                        filter="WEBM Image (*.webm)")
-    #
-    #             if save_path:
-    #                 clip = mp.ImageSequenceClip(self.image_sequence, fps=int(self.fps_input.text()))
-    #                 clip.write_videofile(save_path, codec="libvpx-vp9")
-    #
-    #                 # open a popup dialog with a button the user can click to open the output directory in the file explorer.
-    #                 self.path = os.path.dirname(save_path)
-    #                 self.open_dialog(self.path)
-    #     except Exception as err:
-    #         self.debug(str(err.args))
-    #
-    # def convert_gif_to_Sequence(self) -> None:
-    #     """
-    #     imports a gif file and then converts it to an image sequence saving it out to a user defined directory.
-    #     """
-    #     video_path, _ = QFileDialog.getOpenFileName(self, "Graphics Interchange Files", "", "Gif Files (*.gif)")
-    #
-    #     if video_path:
-    #         # Convert gif to an image sequence
-    #         gif = Image.open(video_path)
-    #         frames = []
-    #         try:
-    #             while True:
-    #                 frames.append(gif.copy())
-    #                 gif.seek(len(frames))  # Move to the next frame
-    #         except EOFError:
-    #             pass
-    #
-    #         # Select output directory
-    #         output_dir = QFileDialog.getExistingDirectory(self, "Select Output Directory")
-    #
-    #         # Save the image sequence to the selected directory
-    #         for i, frame in enumerate(frames):
-    #             output_path = f"{output_dir}/image_sequence_{i}.png"
-    #             frame.save(output_path, "PNG")
-    #
-    #     # open a popup dialog with a button the user can click to open the output directory in the file explorer.
-    #     self.path = output_dir
-    #     self.open_dialog(self.path)
-    #
-    #
-    #
-    #
-    # def convert_mp4_to_Sequence(self) -> None:
-    #     """
-    #     imports a .MP4 file and then converts it to an image sequence saving it out to a user defined directory.
-    #     """
-    #     video_path, _ = QFileDialog.getOpenFileName(self, "Select Video", "", "Video Files (*.mp4)")
-    #
-    #     if video_path:
-    #         video = VideoFileClip(video_path)
-    #         frames = video.iter_frames()
-    #
-    #         output_dir = QFileDialog.getExistingDirectory(self, "Select Output Directory")
-    #
-    #         if output_dir:
-    #             for i, frame in enumerate(frames):
-    #                 image = Image.fromarray(frame)
-    #                 file_name = f"{output_dir}/image_sequence_{i}.png"
-    #                 image.save(file_name)
-    #                 self.console(f"Saved: {file_name}")
-    #
-    #     # open a popup dialog with a button the user can click to open the output directory in the file explorer.
-    #     self.path = output_dir
-    #     self.open_dialog(self.path)
+    def import_as_mp4(self) -> list:
+        """
+        Imports a .MP4 file and converts it to an image sequence.
+        This MP4 may contain audio information. Maybe this can be re-used?
+        """
+        try:
+            video_path, _ = QFileDialog.getOpenFileName(caption="Select Video File", filter="MP4 (*.mp4)")
+
+            # Create the output directory if it doesn't exist
+            output_dir = "{}/{}".format(self.temp_directory, "converted")
+
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
+            if os.path.exists(output_dir) and os.path.isdir(output_dir):
+                shutil.rmtree(output_dir)
+                os.makedirs(output_dir)
+
+            if video_path:
+                video = VideoFileClip(video_path)
+                frames = video.iter_frames()
+
+                for i, frame in enumerate(frames):
+                    image = Image.fromarray(frame)
+                    file_name = f"{output_dir}/{i}.png"
+                    image.save(file_name)
+                    print(f"Saved: {file_name}")
+
+            self.image_sequence = sorted([str(os.path.join(output_dir, filename)).replace("\\", "/") for filename in os.listdir(output_dir)], key=os.path.getctime)
+
+            return self.image_sequence
+        except Exception as err:
+            self.console.append_text("ERROR: export_as_gif: {}".format(err.args))
+
+    def export_as_mp4(self, image_sequence: list) -> None:
+        """
+        Exports the image sequence as an .mp4 file.
+        """
+        try:
+            if image_sequence:
+                fps = self.control.get_fps_value()
+                codec = "mp4v"
+                filename = "Movie_000.mp4"
+                save_path, _ = QFileDialog.getSaveFileName(
+                    caption="Save MP4 file",
+                    directory=filename,
+                    filter="MP4 Files (*.mp4)")
+
+                if save_path:
+                    # Get the image dimensions from the first image in the sequence
+                    first_image = cv2.imread(image_sequence[0])
+                    height, width, _ = first_image.shape
+
+                    video_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*codec), fps, (width, height))
+
+                    for image_path in image_sequence:
+                        frame = cv2.imread(image_path)
+                        video_writer.write(frame)
+
+                    video_writer.release()
+            else:
+                self.console.append_text("WARNING: No images to export.")
+        except Exception as err:
+            self.console.append_text("ERROR: export_as_mp4: {}".format(err.args))
+
+    def export_as_webm(self, image_sequence: list) -> None:
+        """
+        exports the image sequence as a .webm file.
+        """
+        try:
+            if image_sequence:
+                fps = self.control.get_fps_value()
+                codec = "libvpx-vp9"
+                filename = "Webm_000.webm"  # Change the filename extension to .webm
+                save_path, _ = QFileDialog.getSaveFileName(
+                    caption="Save Webm file",
+                    directory=filename,
+                    filter="Webm Files (*.webm)")
+
+                if save_path:
+                    # Create a temporary directory to store the images
+                    temp_dir = tempfile.mkdtemp()
+
+                    # Copy the image_sequence to the temporary directory
+                    for i, image_path in enumerate(image_sequence):
+                        shutil.copy(image_path, os.path.join(temp_dir, f"frame_{i:04d}.png"))
+
+                    # Create an ImageSequenceClip from the images in the temporary directory
+                    image_sequence_clip = ImageSequenceClip(temp_dir, fps=fps)
+
+                    # Save the clip as .webm using the specified codec
+                    image_sequence_clip.write_videofile(save_path, codec=codec)
+
+                    # Remove the temporary directory and its contents
+                    shutil.rmtree(temp_dir)
+
+        except Exception as err:
+            self.console.append_text("ERROR: export_as_webm: {}".format(err.args))
+
+    def save_lsl_script_1_file(self, script: str) -> None:
+        """
+        Saves the lsl script to the specified directory.
+        """
+        try:
+            if script:
+                filename = "Single_Texture_Animation_Script.txt"  # Change the filename extension to .webm
+                save_path, _ = QFileDialog.getSaveFileName(
+                    caption="Save text file",
+                    directory=filename,
+                    filter="Text Files (*.txt)")
+                if save_path:
+                    with open(save_path, "w") as file:
+                        file.write(script)
+
+        except Exception as err:
+            self.console.append_text("ERROR: save_lsl_script_1_file: {}".format(err.args))
+
+    def save_lsl_script_2_file(self, script: str) -> None:
+        """
+        Saves the lsl script to the specified directory.
+        """
+        try:
+            if script:
+                filename = "Sequence_Texture_Animation_Script.txt"  # Change the filename extension to .webm
+                save_path, _ = QFileDialog.getSaveFileName(
+                    caption="Save text file",
+                    directory=filename,
+                    filter="Text Files (*.txt)")
+                if save_path:
+                    with open(save_path, "w") as file:
+                        file.write(script)
+
+        except Exception as err:
+            self.console.append_text("ERROR: save_lsl_script_2_file: {}".format(err.args))
+

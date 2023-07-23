@@ -106,7 +106,6 @@ class SpriteSheetWidget(QWidget):
                 if end >= len(self.image_sequence):
                     self.control.set_end_frame_value(len(self.image_sequence))
 
-
                 image_list = []
                 for file_path in self.image_sequence[start:end]:
                     image = QPixmap(file_path)
@@ -201,11 +200,12 @@ class SpriteSheetWidget(QWidget):
 
             rows, columns = self.calculate_rows_columns()
 
-            if self.use_scale:
+            if not self.use_scale:
                 grid_width, grid_height = self.calculate_grid_size(self.images, rows, columns)
                 sprite_sheet_width = grid_width
                 sprite_sheet_height = grid_height
-                self.console.append_text("INFO: Generated Sprite Sheet Scale = {}x{}".format(sprite_sheet_width, sprite_sheet_height))
+                self.console.append_text(
+                    "INFO: Generated Sprite Sheet Scale = {}x{}".format(sprite_sheet_width, sprite_sheet_height))
 
             # Calculate the target width and height for each image
             target_width = sprite_sheet_width // columns
@@ -227,8 +227,15 @@ class SpriteSheetWidget(QWidget):
             x = 0
             y = 0
 
+            index = self.control.get_start_frame_value()
+
             for image in self.images:
                 scaled_image = image.scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
+
+                # index += 1
+                # image_name = str(self.image_sequence[index])
+                # print(image_name)
+                # self.console.append_text(str(image_name))
 
                 # Draw the outline on the outline layer
                 if self.grid_overlay:
@@ -328,7 +335,7 @@ class SpriteSheetWidget(QWidget):
             self.view.verticalScrollBar().setValue(
                 int(self.view.verticalScrollBar().value()) + int(scroll_adjustment.y())
             )
-            
+
             if self.scroll_pos is not None:
                 self.view.centerOn(self.scroll_pos)
 

@@ -135,7 +135,7 @@ class ControlWidget(QWidget):
         self.console.append_text("INFO: Grid Rows = {}".format(self.grid_rows_input.value()))
         self.console.append_text("INFO: Grid Columns = {}".format(self.grid_columns_input.value()))
         self.console.append_text("INFO: Grid Overlay = {}".format(self.use_grid_checkbox.isChecked()))
-        self.console.append_text("INFO: Use Scale = {}".format(self.use_scale_checkbox.isChecked()))
+        self.console.append_text("INFO: Use Original Scale = {}".format(self.use_scale_checkbox.isChecked()))
         self.console.append_text("INFO: sprite sheet width = {}".format(self.image_width_input.value()))
         self.console.append_text("INFO: sprite sheet height = {}".format(self.image_height_input.value()))
 
@@ -168,6 +168,11 @@ class ControlWidget(QWidget):
         separator7.setFrameShadow(QFrame.Sunken)
         separator7.setFixedHeight(2)
 
+        separator8 = QFrame()
+        separator8.setFrameShape(QFrame.HLine)
+        separator8.setFrameShadow(QFrame.Sunken)
+        separator8.setFixedHeight(2)
+
         controls = [
             (play_button, stop_button),
             (separator1, separator2),
@@ -177,9 +182,10 @@ class ControlWidget(QWidget):
             (start_frame_label, self.start_frame_input),
             (end_frame_label, self.end_frame_input),
             (separator5, separator6),
-            (self.use_grid_checkbox, self.use_scale_checkbox),
+            (self.use_grid_checkbox, separator7),
             (grid_rows_label, self.grid_rows_input),
             (grid_columns_label, self.grid_columns_input),
+            (self.use_scale_checkbox, separator8),
             (image_width_label, self.image_width_input),
             (image_height_label, self.image_height_input)
         ]

@@ -16,10 +16,12 @@ from menu_bar_widget import MenuBar
 from playback_widget import PlaybackWidget
 from sprite_sheet_widget import SpriteSheetWidget
 from status_bar_widget import StatusBar
+from script_generator import ScriptGenerator
 
 
 # TODO: Make it so user can modify the order of the frames in the image sequence.
 # TODO: Make it so the user can inject or append a frame or sequence into the existing sequence.
+# TODO: Add a new layer option so users can create layered sequences.
 
 # Custom class to define a signal
 class ExitSignal(QObject):
@@ -120,23 +122,23 @@ class MainWindow(QMainWindow):
 
         self.import_export = ImportExporter(self.main_console_widget, self.control_widget)
 
-        # # Setup the menu bar
+        # Setup the menu bar
         self.menu_bar = MenuBar(self.main_console_widget)
-        # Connect the menu bar signal using instance
+
+        # Connect the menu bar signal using instance for file menu
         self.menu_bar.importimagesequence.connect(self.import_image_sequence)
-        self.menu_bar.importgiffile.connect(self.import_gif)
+        self.menu_bar.exportimagesequence.connect(self.export_image_sequence)
         self.menu_bar.exportspritesheet.connect(self.export_sprite_sheet)
+        self.menu_bar.importgiffile.connect(self.import_gif)
         self.menu_bar.exportgiffile.connect(self.export_gif)
-
-        # TODO: Plugin the functions for these menu options
-        # self.menu_bar.importgiffile.connect(self.import_image_sequence)
-        # self.menu_bar.exportgiffile.connect(self.import_image_sequence)
-        # self.menu_bar.convertgiftosequence.connect(self.import_image_sequence)
-        # self.menu_bar.importmp4file.connect(self.import_image_sequence)
-        # self.menu_bar.exportmp4file.connect(self.import_image_sequence)
-        # self.menu_bar.convertmp4tosequence.connect(self.import_image_sequence)
-
+        self.menu_bar.importmp4file.connect(self.import_mp4)
+        self.menu_bar.exportmp4file.connect(self.export_mp4)
+        self.menu_bar.exportwebmfile.connect(self.export_webm)
         self.menu_bar.exitapp.connect(self.exit_application)
+
+        # Connect the menu bar signal using instance for scripts menu
+        self.menu_bar.lsl_script_1.connect(self.provide_lsl_script_1)
+        self.menu_bar.lsl_script_2.connect(self.provide_lsl_script_2)
 
         # Add the menu bar to the main window
         menu = self.menu_bar.create_menu_bar()
@@ -144,26 +146,18 @@ class MainWindow(QMainWindow):
 
         # Connect the controls here
         self.control_widget.fpsValueChanged.connect(self.playback_widget.set_fps_value)
-
         self.control_widget.displayframeChanged.connect(self.playback_widget.set_frame_number)
-
         self.control_widget.startframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.endframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
-
         self.control_widget.use_grid_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_grid_overlay)
         self.control_widget.use_scale_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_use_scale)
-
         self.control_widget.gridrowValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.gridcolumnValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.imagewidthValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.imageheightValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
-
         self.control_widget.playClicked.connect(self.playback_widget.start_playback)
-        # self.control_widget.playClicked.connect(self.set_status_text("Playing Sequence"))
         self.control_widget.stopClicked.connect(self.playback_widget.stop_playback)
-        # self.control_widget.stopClicked.connect(self.set_status_text("Playback Stopped"))
         self.image_sequence_widget.imageClicked.connect(self.handle_image_clicked)
-
         self.image_viewer_widget.imagepathClicked.connect(self.open_file_path)
 
         # add the widgets to the main window.
@@ -172,8 +166,16 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, image_viewer_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, control_dock_widget)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, sprite_sheet_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, console_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, table_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, table_dock_widget)
+
+        # Hide the table and console by default
+        console_dock_widget.setVisible(False)
+        table_dock_widget.setVisible(False)
+
+        # Set which widgets we want to start out as floating free of the main window
+        console_dock_widget.setFloating(True)
+        table_dock_widget.setFloating(True)
 
         # Add a timer to control the playback.
         self.timer = QTimer(self)
@@ -187,6 +189,16 @@ class MainWindow(QMainWindow):
         self.resize_timer.timeout.connect(self.report_size)
 
         self.main_console_widget.append_text("INFO: Finished loading all widgets.\n")
+
+    def provide_lsl_script_1(self):
+        scripts = ScriptGenerator()
+        script = scripts.generate_lsl_script_option_1()
+        self.import_export.save_lsl_script_1_file(script)
+
+    def provide_lsl_script_2(self):
+        scripts = ScriptGenerator()
+        script = scripts.generate_lsl_script_option_2()
+        self.import_export.save_lsl_script_2_file(script)
 
     def open_file_path(self, file_path) -> None:
         """
@@ -255,6 +267,12 @@ class MainWindow(QMainWindow):
         self.image_sequence = self.import_export.import_image_sequence()
         self.populate_image_sequence(self.image_sequence)
 
+    def export_image_sequence(self) -> None:
+        """
+        Exports the image sequence.
+        """
+        self.import_export.export_image_sequence(self.image_sequence)
+
     def import_gif(self) -> None:
         """
         Imports an image sequence after converting a selected gif.
@@ -268,6 +286,26 @@ class MainWindow(QMainWindow):
         Exports the image sequence as a .gif
         """
         self.import_export.export_as_gif(self.image_sequence)
+
+    def export_webm(self):
+        """
+        Exports the image sequence as a .gif
+        """
+        self.import_export.export_as_webm(self.image_sequence)
+
+    def import_mp4(self) -> None:
+        """
+        Imports an image sequence after converting a selected mp4.
+        """
+        self.image_sequence = []
+        self.image_sequence = self.import_export.import_as_mp4()
+        self.populate_image_sequence(self.image_sequence)
+
+    def export_mp4(self):
+        """
+        Exports the image sequence as a .mp4
+        """
+        self.import_export.export_as_mp4(self.image_sequence)
 
     def populate_image_sequence(self, image_sequence):
         """
@@ -301,7 +339,6 @@ class MainWindow(QMainWindow):
     def export_sprite_sheet(self):
         sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()
         self.import_export.export_sprite_sheet(sprite_sheet)
-
 
     def get_memory_usage(self) -> None:
         """
