@@ -111,9 +111,15 @@ class ControlWidget(QWidget):
         self.image_height_input = QSpinBox()
         self.image_height_input.setRange(0, 4096)
         self.image_height_input.setStyleSheet(style_sheet.spinbox_style())
+
         # Set the default sprite sheet size.
         self.image_width_input.setValue(2048)
         self.image_height_input.setValue(2048)
+
+        self.combined_sprite_sheet_width = 0
+        self.combined_sprite_sheet_height = 0
+        self.defined_sprite_sheet_width = 0
+        self.defined_sprite_sheet_height = 0
 
         # Set the controls for the frame number output
         frame_number_label = QLabel("Frame Number:")
@@ -125,10 +131,16 @@ class ControlWidget(QWidget):
         self.frame_number_display.setValue(0)
 
         self.use_grid_checkbox = QCheckBox("Grid Overlay")
-        self.use_grid_checkbox.setChecked(True)
+        self.use_grid_checkbox.setChecked(False)
+        self.use_grid_checkbox.setToolTip(
+            "toggle on or off the outline around each cell for clear visibility.\n"
+            "This layer is baked into the sprite sheet if left enabled on export.")
 
-        self.use_scale_checkbox = QCheckBox("Use Scale")
-        self.use_scale_checkbox.setChecked(True)
+        self.use_scale_checkbox = QCheckBox("Original scale")
+        self.use_scale_checkbox.setChecked(False)
+        self.use_scale_checkbox.setToolTip(
+            "Enabled: Use the source image scale for each cell.\n"
+            "Disabled: Down scale each frame to fit the defined image scale.")
 
         self.console.append_text("INFO: Control Settings:-------------")
         self.console.append_text("INFO: FPS = {}".format(self.fps_input.value()))
@@ -374,4 +386,21 @@ class ControlWidget(QWidget):
             value (int): The new image height value.
         """
         self.image_height_input.setValue(value)
+
+    def toggle_scale_value_control(self, value: bool) -> None:
+        """
+         toggles the image scale value controls on and off depending on if the user has checked the option to use original scale.
+        """
+        if not value:
+            self.image_width_input.setEnabled(True)
+            self.image_height_input.setEnabled(True)
+            self.image_width_input.setStyleSheet(style_sheet.spinbox_style())
+            self.image_height_input.setStyleSheet(style_sheet.spinbox_style())
+
+        else:
+            self.image_width_input.setEnabled(False)
+            self.image_height_input.setEnabled(False)
+            self.image_width_input.setStyleSheet(style_sheet.spinbox_style_disabled())
+            self.image_height_input.setStyleSheet(style_sheet.spinbox_style_disabled())
+
 

@@ -7,11 +7,13 @@ This tool is for creating sprite sheets and converting image sequences into othe
 2. In project explorer right click the main.py file and choose open in terminal.
 3. Because pycharm uses a virtual environment you will need to include hidden imports for Pillow. Using Pyinstaller to build the .exe use the following command.
 
- pyinstaller --onefile --paths=.\venv\ --windowed --hidden-import=PIL --hidden-import=Pillow --hidden-import=psutil main_window_widget.py
-`
+
+pyinstaller --onefile --paths=.\venv\ --windowed --hidden-import=PIL --hidden-import=Pillow --hidden-import=psutil --icon=G:/sprite_sheet_creator/SpriteSheetCreator/sprite_sheet_creator/main_window_widget.ico main_window_widget.py
+
+
 This will generate a main.exe file in the dist directory.
 
 ### Testing:
 
 Nothing here yet.
-Need to add testing documentation. 
+Need to add testing documentation.

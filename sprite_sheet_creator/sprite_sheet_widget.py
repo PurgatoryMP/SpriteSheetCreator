@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QPixmap, QPainter, QTransform, QPen
-from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout, QScrollArea
+from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout, QScrollArea, QLabel
 
 import style_sheet
 
@@ -21,7 +21,7 @@ class SpriteSheetWidget(QWidget):
         self.scroll_pos = None
         self.sprite_sheet = None
         self.images = None
-        self.grid_overlay = True
+        self.grid_overlay = False
         self.use_scale = False
         self.console = main_console_widget
         self.control = control_widget
@@ -33,6 +33,12 @@ class SpriteSheetWidget(QWidget):
         # Create the main layout
         layout = QVBoxLayout()
         self.setLayout(layout)
+
+        # Create a QLabel
+        self.label = QLabel("Sprite Sheet Scale:", self)
+        self.label.setToolTip("Sprite sheet image dimensions.")
+        self.label.setStyleSheet(style_sheet.folder_path_label_style())
+        layout.addWidget(self.label)
 
         # Create the QGraphicsView and QGraphicsScene
         self.view = QGraphicsView()
@@ -60,6 +66,12 @@ class SpriteSheetWidget(QWidget):
 
         # Enable mouse tracking to receive mouse wheel events
         self.view.setMouseTracking(True)
+
+        # Add a timer with a delay so the images are resized to fit the widget after you release the resize control.
+        self.resize_timer = QTimer()
+        self.resize_timer.setInterval(500)  # Set the delay in milliseconds
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.report_size)
 
         self.console.append_text("INFO: Finished Loading Sprite Sheet Widget.")
 
@@ -181,6 +193,7 @@ class SpriteSheetWidget(QWidget):
             else:
                 self.use_scale = True
 
+            self.control.toggle_scale_value_control(self.use_scale)
             self.console.append_text("INFO: Use Scale set to: {}".format(self.use_scale))
             self.update_sprite_sheet()
         except Exception as err:
@@ -200,16 +213,19 @@ class SpriteSheetWidget(QWidget):
 
             rows, columns = self.calculate_rows_columns()
 
-            if not self.use_scale:
+            if self.use_scale:
                 grid_width, grid_height = self.calculate_grid_size(self.images, rows, columns)
                 sprite_sheet_width = grid_width
                 sprite_sheet_height = grid_height
                 self.console.append_text(
                     "INFO: Generated Sprite Sheet Scale = {}x{}".format(sprite_sheet_width, sprite_sheet_height))
 
-            # Calculate the target width and height for each image
+            # Calculate the target width and height for each image or 'cell'
             target_width = sprite_sheet_width // columns
             target_height = sprite_sheet_height // rows
+
+            self.label.clear()
+            self.label.setText("Sprite Sheet Scale: {}x{}, Cell Scale: {}x{}".format(sprite_sheet_width, sprite_sheet_height, target_width, target_height))
 
             sprite_sheet = QPixmap(sprite_sheet_width, sprite_sheet_height)
             sprite_sheet.fill(Qt.transparent)
@@ -260,6 +276,8 @@ class SpriteSheetWidget(QWidget):
             sprite_sheet_with_outline_painter.drawPixmap(0, 0, sprite_sheet)
             sprite_sheet_with_outline_painter.drawPixmap(0, 0, outline_layer)
             sprite_sheet_with_outline_painter.end()
+
+            # TODO: Add Masking layer sequence option.
 
             return sprite_sheet_with_outline
         except Exception as err:
@@ -324,6 +342,7 @@ class SpriteSheetWidget(QWidget):
                 self.scale_factor = self.min_scale_factor
             elif self.scale_factor > self.max_scale_factor:
                 self.scale_factor = self.max_scale_factor
+                self.fit_to_widget()
 
             self.view.setTransform(QTransform().scale(self.scale_factor, self.scale_factor))
             new_pos = self.view.mapToScene(self.view.viewport().rect().center())
@@ -338,6 +357,7 @@ class SpriteSheetWidget(QWidget):
 
             if self.scroll_pos is not None:
                 self.view.centerOn(self.scroll_pos)
+            # self.view.centerOn(self.cursor().pos())
 
         except Exception as err:
             self.console.append_text("ERROR: zoom_image: {}".format(err.args))
@@ -350,3 +370,21 @@ class SpriteSheetWidget(QWidget):
             self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
         except Exception as err:
             self.console.append_text("ERROR: fit_to_widget: {}".format(err.args))
+
+    def resizeEvent(self, event) -> None:
+        """
+        Triggered when the main window is resized by the user.
+        """
+        # Call the base class resizeEvent method
+        super().resizeEvent(event)
+        # Start or restart the resize timer
+        self.resize_timer.start()
+
+    def report_size(self) -> None:
+        """
+        Report the current size of the main window.
+
+        After the window has been resized, this function fits the images to the new widget size.
+
+        """
+        self.fit_to_widget()

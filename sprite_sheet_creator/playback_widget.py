@@ -2,6 +2,7 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QImage, QPixmap, QTransform
 from PyQt5.QtWidgets import QLabel, QWidget, QVBoxLayout, QScrollArea, QScrollBar, QGraphicsView, QGraphicsScene
 import style_sheet
+import datetime
 
 
 # TODO: Fit the playback to the widget on scale
@@ -30,6 +31,7 @@ class PlaybackWidget(QWidget):
             parent (QWidget, optional): The parent widget. Defaults to None.
         """
         super(PlaybackWidget, self).__init__(parent)
+        self.Playtime_label = None
         self.label = None
         self.scene = None
         self.view = None
@@ -51,6 +53,13 @@ class PlaybackWidget(QWidget):
 
         self.control = control_widget
         self.control.update_frame_number(self.current_frame)
+
+        # Add a timer with a delay so the images are resized to fit the widget after you release the resize control.
+        self.resize_timer = QTimer()
+        self.resize_timer.setInterval(500)  # Set the delay in milliseconds
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.report_size)
+
         self.console.append_text("INFO: Finished loading Playback Widget.")
 
     def setup_ui(self):
@@ -63,6 +72,7 @@ class PlaybackWidget(QWidget):
             self.view = QGraphicsView(self)
             self.scene = QGraphicsScene(self)
             self.view.setScene(self.scene)
+            self.view.setStyleSheet(style_sheet.graphics_scene_style())
             layout.addWidget(self.view)
 
             scroll_area = QScrollArea(self)
@@ -70,6 +80,13 @@ class PlaybackWidget(QWidget):
             scroll_area.setWidgetResizable(True)
             scroll_area.setWidget(self.view)
             layout.addWidget(scroll_area)
+
+            # Create a QLabel
+            self.Playtime_label = QLabel("Playtime:", self)
+            self.Playtime_label.setStyleSheet(style_sheet.folder_path_label_style())
+            self.Playtime_label.setToolTip("Sprite sheet animation length: Duration = cells/fps")
+            layout.addWidget(self.Playtime_label)
+
         except Exception as err:
             self.console.append_text("ERROR: setup_ui: {}".format(err.args))
 
@@ -88,6 +105,8 @@ class PlaybackWidget(QWidget):
                     self.image_sequence.append(QImage(file_path))
                 # start the playback after the image sequence is done loading.
                 self.start_playback()
+                self.display_playtime()
+                self.fit_to_widget()
         except Exception as err:
             self.console.append_text("ERROR: load_image_sequence: {}".format(err.args))
 
@@ -122,6 +141,7 @@ class PlaybackWidget(QWidget):
         """
         self.timer.stop()
         self.is_playing = False
+        self.display_playtime()
         self.console.append_text("INFO: Playback Stopped.")
         self.status.set_status_text("Playback Stopped.")
 
@@ -133,6 +153,7 @@ class PlaybackWidget(QWidget):
         """
         self.stop_playback()
         self.console.append_text("INFO: FPS set to: {}".format(value))
+        self.display_playtime()
         if value:
             self.timer.setInterval(1000 / value)
             self.start_playback()
@@ -150,8 +171,37 @@ class PlaybackWidget(QWidget):
                 pixmap = QPixmap.fromImage(image)
                 self.scene.clear()
                 self.scene.addPixmap(pixmap)
+                self.display_playtime()
         except Exception as err:
             self.console.append_text("ERROR: set_frame_number: {}".format(err.args))
+
+    def display_playtime(self):
+        """
+        Display the current length of the sprite sheet if played at the defined settings.
+        """
+        try:
+            fps = self.control.get_fps_value()
+            cell_count = self.control.get_grid_rows_value() * self.control.get_grid_columns_value()
+
+            if fps:
+                playtime = cell_count/fps
+
+                duration = datetime.timedelta(seconds=playtime)
+
+                # Extract hours, minutes, and seconds from the duration
+                hours, remainder = divmod(duration.seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+
+                microseconds = duration.microseconds
+
+                self.Playtime_label.clear()
+                self.Playtime_label.setText(
+                    "Playtime: {}:{}:{}.{}s".format(hours, minutes, seconds, microseconds))
+            else:
+                self.Playtime_label.clear()
+                self.Playtime_label.setText("None")
+        except Exception as err:
+            self.console.append_text("ERROR: display_playtime: {}".format(err.args))
 
     def update_frame(self):
         """
@@ -301,3 +351,21 @@ class PlaybackWidget(QWidget):
         float: The maximum zoom factor.
         """
         return 5.0  # Adjust the maximum zoom factor as desired
+
+    def resizeEvent(self, event) -> None:
+        """
+        Triggered when the main window is resized by the user.
+        """
+        # Call the base class resizeEvent method
+        super().resizeEvent(event)
+        # Start or restart the resize timer
+        self.resize_timer.start()
+
+    def report_size(self) -> None:
+        """
+        Report the current size of the main window.
+
+        After the window has been resized, this function fits the images to the new widget size.
+
+        """
+        self.fit_to_widget()

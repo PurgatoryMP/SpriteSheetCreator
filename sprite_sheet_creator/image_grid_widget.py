@@ -75,6 +75,7 @@ class ImageSequenceWidget(QWidget):
                     pixmap = pixmap.scaledToHeight(150, Qt.SmoothTransformation)
 
                     label = QLabel()
+                    label.setStyleSheet(style_sheet.image_grid_image_style())
                     label.setPixmap(pixmap)
                     label.setAlignment(Qt.AlignCenter)
 
@@ -84,7 +85,11 @@ class ImageSequenceWidget(QWidget):
                     image_layout.addWidget(label)
 
                     filename_label = QLabel(os.path.basename(image_path))
+                    filename_label.setStyleSheet(style_sheet.image_grid_label_style())
                     filename_label.setAlignment(Qt.AlignCenter)
+
+                    # Connect the clicked signal of the label to the slot function
+                    filename_label.mousePressEvent = lambda event, path=image_path: self.handle_image_click(event, path)
 
                     image_layout.addWidget(filename_label)
 
@@ -123,7 +128,9 @@ class ImageSequenceWidget(QWidget):
         image_height = pixmap.height()
         bit_depth = pixmap.depth()
 
-        self.table.append_data(creation_time, file_name, file_path, formatted_file_size_gb, image_width, image_height, "{}bit".format(bit_depth))
+        self.table.append_data(
+            creation_time, file_name, file_path, formatted_file_size_gb, image_width, image_height,
+            "{}bit".format(bit_depth))
 
     def handle_image_click(self, event, image_path):
         """

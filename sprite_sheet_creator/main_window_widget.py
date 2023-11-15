@@ -22,6 +22,7 @@ from script_generator import ScriptGenerator
 # TODO: Make it so user can modify the order of the frames in the image sequence.
 # TODO: Make it so the user can inject or append a frame or sequence into the existing sequence.
 # TODO: Add a new layer option so users can create layered sequences.
+# TODO: Add masking layer option so users can import masking images or sequences. (maybe out of scope for tool)?
 
 # Custom class to define a signal
 class ExitSignal(QObject):
@@ -49,9 +50,12 @@ class MainWindow(QMainWindow):
         # Connect the custom signal to your desired function
         self.exit_signal.exit_signal.connect(self.exit_application)
 
+        # TODO: find a good way to auto set this value.
+        self.version_number = "v1.0.2"
+
         # Set window title
         self.image_sequence = None
-        self.setWindowTitle("Super Sprite")
+        self.setWindowTitle("Super Sprite {}".format(self.version_number))
         self.resize(1200, 800)
 
         # Define main window and docked widget style sheets
@@ -83,7 +87,7 @@ class MainWindow(QMainWindow):
         table_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         # Display the application information in the console before anything else.
-        self.main_console_widget.append_text("Super Sprite\nVersion: 1.0.0\n\n")
+        self.main_console_widget.append_text("Super Sprite {}".format(self.version_number))
 
         # Define the controls, so we can add them to the other widgets
         self.control_widget = ControlWidget(self.main_console_widget)
@@ -151,8 +155,8 @@ class MainWindow(QMainWindow):
         self.control_widget.endframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.use_grid_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_grid_overlay)
         self.control_widget.use_scale_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_use_scale)
-        self.control_widget.gridrowValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
-        self.control_widget.gridcolumnValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.gridrowValueChanged.connect(self.update_playback_display)
+        self.control_widget.gridcolumnValueChanged.connect(self.update_playback_display)
         self.control_widget.imagewidthValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.imageheightValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.playClicked.connect(self.playback_widget.start_playback)
@@ -212,6 +216,16 @@ class MainWindow(QMainWindow):
             directory = os.path.dirname(file_path)
             if directory:
                 os.startfile(directory)
+
+    def update_playback_display(self) -> None:
+        """
+        updates the playback and sprite sheet controls.
+        """
+        try:
+            self.sprite_sheet_widget.update_sprite_sheet()
+            self.playback_widget.display_playtime()
+        except Exception as err:
+            self.main_console_widget.append_text(str(err.args))
 
     def handle_image_clicked(self, image_path) -> None:
         """

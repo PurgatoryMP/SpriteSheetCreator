@@ -1,20 +1,21 @@
 """This script contains all the QT Control Style settings"""
-import pathlib
+# import pathlib
 
-from image_generator import ImageGenerator
+# from image_generator import ImageGenerator
 
 
 # TODO: Update all the stylesheets with the defined style settings.
+# TODO: Find out why I can't use an image I generated as a background post run.
 
 def get_style():
 
-    generator = ImageGenerator()
-    transparent_checkered_background = str(generator.get_checker_pattern()).replace("\\", "/")
-    print(transparent_checkered_background)
+    # generator = ImageGenerator()
+    # transparent_checkered_background = str(generator.get_checker_pattern()).replace("\\", "/")
+    # print(transparent_checkered_background)
 
     style_settings = {
         "": "",
-        "Transparent_Checkered_Background": transparent_checkered_background,
+        # "Transparent_Checkered_Background": transparent_checkered_background,
         "Main_Window_Background_Color": "#303030",
         "Dock_Widget_Background_color": "#3D3D3D",
         "Separator_Color": "#161616",
@@ -280,7 +281,7 @@ def graphics_scene_style():
 
     style_sheet = """
         QGraphicsView {
-            background-color: %(Viewer_Background_color)s;
+            background-color: %(Main_Window_Background_Color)s;
         }
         
         QGraphicsView:hover {
@@ -344,6 +345,58 @@ def spinbox_style():
     """
     return style_sheet
 
+
+def spinbox_style_disabled():
+    # arrow_pixmap = image_generator.generate_arrow_image()
+    # / *image: url({""" + arrow_pixmap + """}); * /
+
+    style_sheet = """
+        QSpinBox {
+            qproperty-alignment: AlignCenter;
+            background-color: #545454;
+            color: Grey;
+            font-size: 14px;
+            font-weight: string;
+            border: 1px solid Black;
+            border-radius: 8px;
+            padding: 4px;
+            padding-right: 20px; /* Add space for the right arrow button */
+        }
+
+        QSpinBox::hover {
+            background-color: #686868;
+        }
+
+        QSpinBox::up-button, QSpinBox::down-button {
+            width: 15px;
+            height: 15px;
+            border: 1px solid Black;
+            border-radius: 5px;
+            background-color: DarkGrey;
+        }
+
+        QSpinBox::up-button:hover {
+            background-color: LightGrey;
+        }
+        QSpinBox::down-button:hover {
+            background-color: LightGrey;
+        }
+
+        QSpinBox::up-button {
+            subcontrol-position: right; /* Position the up arrow button on the right side */
+            right: 0;
+            subcontrol-border: 1px solid Black;
+            subcontrol-origin: border;
+        }
+
+        QSpinBox::down-button {
+            subcontrol-position: left; /* Position the down arrow button on the left side */
+            left: 0;
+            subcontrol-border: 1px solid Black;
+            subcontrol-origin: border;
+        }
+    """
+    return style_sheet
 
 def play_btn_style():
     style_sheet = """
@@ -417,6 +470,35 @@ def explore_folder_btn_style():
             color: White;
         }
     """
+    return style_sheet
+
+def image_grid_image_style():
+    style_sheet = """
+            QLabel:hover {
+            background-color: #6b7c80;
+            border: 1px solid gold;
+            border-radius: 8px;
+            }
+        """
+    return style_sheet
+
+def image_grid_label_style():
+    style_sheet = """
+            QLabel {
+                background-color: #434D4F;
+                color: White;
+                font-size: 14px;
+                border: 1px solid Black;
+                border-radius: 8px;
+                padding: 4px;
+
+            }
+            QLabel:hover {
+            background-color: #6b7c80;
+            border: 1px solid gold;
+            border-radius: 8px;
+            }
+        """
     return style_sheet
 
 def folder_path_label_style():

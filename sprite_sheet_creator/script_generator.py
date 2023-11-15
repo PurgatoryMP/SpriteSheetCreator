@@ -181,11 +181,11 @@ integer load_inventory()
         specular_list_length = llGetListLength(specular_sprite_sheets);
         
         // Set the texture of the prim's face to the first image
-        llSetLinkPrimitiveParamsFast(0,[ PRIM_TEXTURE, face,  llList2String(defuse_sprite_sheets,0), <1.0, 1.0, 0.0>, <0,0,0>, 0.0 ]);
+        llSetLinkPrimitiveParamsFast(link_number,[ PRIM_TEXTURE, face,  llList2String(defuse_sprite_sheets,0), <1.0, 1.0, 0.0>, <0,0,0>, 0.0 ]);
         if(defuse_list_length == normal_list_length == specular_list_length)
         {
-             llSetLinkPrimitiveParamsFast(0,[ PRIM_NORMAL, face,  llList2String(normal_sprite_sheets,0), <1.0, 1.0, 0.0>, <0,0,0>, 0.0 ]);
-             llSetLinkPrimitiveParamsFast(0,[ PRIM_SPECULAR, face,  llList2String(specular_sprite_sheets,0), <1.0, 1.0, 0.0>, <0,0,0>, 0.0, <0,0,0>, 51, 0 ]);
+             llSetLinkPrimitiveParamsFast(link_number,[ PRIM_NORMAL, face,  llList2String(normal_sprite_sheets,0), <1.0, 1.0, 0.0>, <0,0,0>, 0.0 ]);
+             llSetLinkPrimitiveParamsFast(link_number,[ PRIM_SPECULAR, face,  llList2String(specular_sprite_sheets,0), <1.0, 1.0, 0.0>, <0,0,0>, 0.0, <0,0,0>, 51, 0 ]);
         }
         
         // Split the first image string into a list using "_" as the delimiter

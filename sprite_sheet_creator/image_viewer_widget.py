@@ -1,7 +1,7 @@
 import os
 
 import style_sheet
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QPixmap, QTransform, QPainter
 from PyQt5.QtWidgets import QLabel, QVBoxLayout, QScrollArea, QWidget, QGraphicsView, QGraphicsScene, QPushButton, \
     QHBoxLayout
@@ -57,6 +57,12 @@ class ImageViewerWidget(QWidget):
         self.scale_factor = 1.0
         self.min_scale_factor = 0.2
         self.max_scale_factor = 3.0
+
+        # Add a timer with a delay so the images are resized to fit the widget after you release the resize control.
+        self.resize_timer = QTimer()
+        self.resize_timer.setInterval(500)  # Set the delay in milliseconds
+        self.resize_timer.setSingleShot(True)
+        self.resize_timer.timeout.connect(self.report_size)
 
         # Call the method to update the display name label with an empty file name
         self.set_display_name_label("")
@@ -175,5 +181,23 @@ class ImageViewerWidget(QWidget):
             self.imagepathClicked.emit(image_path)
         except Exception as err:
             self.console.append_text("ERROR: handle_image_path_click: {}".format(err.args))
+
+    def resizeEvent(self, event) -> None:
+        """
+        Triggered when the main window is resized by the user.
+        """
+        # Call the base class resizeEvent method
+        super().resizeEvent(event)
+        # Start or restart the resize timer
+        self.resize_timer.start()
+
+    def report_size(self) -> None:
+        """
+        Report the current size of the main window.
+
+        After the window has been resized, this function fits the images to the new widget size.
+
+        """
+        self.fit_to_widget()
 
 

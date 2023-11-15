@@ -22,7 +22,8 @@ class ConsoleWidget(QWidget):
         # Create a QScrollArea widget
         scroll_area = QScrollArea(self)
         scroll_area.setStyleSheet(style_sheet.scroll_bar_style())
-        scroll_area.setWidgetResizable(True)  # Allow the widget to be resizable
+        # Allow the widget to be resizable
+        scroll_area.setWidgetResizable(True)
 
         # Create the QTextEdit widget for the console window
         self.console = QTextEdit()
