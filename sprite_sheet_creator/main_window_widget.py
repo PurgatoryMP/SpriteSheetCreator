@@ -3,6 +3,7 @@ import sys
 
 import psutil
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
 
 import style_sheet
@@ -422,6 +423,8 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     # Create the application instance
     app = QApplication(sys.argv)
+
+    app.setWindowIcon(QIcon("G:/sprite_sheet_creator/SpriteSheetCreator/sprite_sheet_creator/main_window_widget.ico"))
 
     # Create and show the main window
     window = MainWindow()
