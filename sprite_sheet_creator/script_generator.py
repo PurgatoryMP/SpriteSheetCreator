@@ -3,17 +3,181 @@ class ScriptGenerator:
     A class for generating scripts to animate the sprite sheet.
     """
 
-    # TODO: Create scripts that support the following:
-    #  LSL:
-    #   llTextureAnimation()
-    #   llSetLinkPrimitiveParamsFast()
-    #  Python: for TK and QT5
-    #  GDScript
-    #  C# for unity
-    #  C++ for Unreal.
+    def generate_unreal_script(self):
+        """
+        Generate a blue print script for unreal.
+        """
+        # TODO find out a useful way to do this.
+        script = """"""
+        return script
 
-    # def __init__(self):
-    #     pass
+    def generate_pygame_script(self):
+        """
+        Generate a simple pygame script.
+        """
+        script = """import pygame
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Function to load a sprite sheet and return a list of frames
+def load_sprite_sheet(file_path, num_rows, num_cols):
+    sprite_sheet = pygame.image.load(file_path).convert_alpha()
+    sprite_width = sprite_sheet.get_width() // num_cols
+    sprite_height = sprite_sheet.get_height() // num_rows
+
+    frames = []
+    for row in range(num_rows):
+        for col in range(num_cols):
+            frame = sprite_sheet.subsurface(pygame.Rect(col * sprite_width, row * sprite_height, sprite_width, sprite_height))
+            frames.append(frame)
+
+    return frames
+
+def main():
+    # Set up display
+    screen = pygame.display.set_mode((800, 600))
+    pygame.display.set_caption('Sprite Sheet Animation')
+
+    # Load sprite sheet
+    sprite_sheet_path = 'your_sprite_sheet.png'  # Change this to the path of your sprite sheet
+    frames = load_sprite_sheet(sprite_sheet_path, 8, 8)  # Adjust the dimensions based on your sprite sheet
+
+    # Set up animation parameters
+    frame_index = 0
+    frame_delay = 100  # milliseconds per frame
+    last_frame_time = pygame.time.get_ticks()
+
+    # Main game loop
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+
+        # Update animation frame
+        current_time = pygame.time.get_ticks()
+        if current_time - last_frame_time >= frame_delay:
+            frame_index = (frame_index + 1) % len(frames)
+            last_frame_time = current_time
+
+        # Draw current frame
+        screen.fill((255, 255, 255))  # White background
+        screen.blit(frames[frame_index], (100, 100))  # Adjust the position as needed
+
+        # Update display
+        pygame.display.flip()
+
+if __name__ == "__main__":
+    main()
+"""
+        return script
+
+    def generate_godot_script(self):
+        """
+        Generate a script for godot
+        """
+        script = """extends AnimatedSprite
+
+# Set the number of columns and rows in your sprite sheet
+var sheet_columns = 8
+var sheet_rows = 8
+
+# Set the total number of frames in the sprite sheet
+var total_frames = sheet_columns * sheet_rows
+
+# Set the animation speed (frames per second)
+var animation_speed = 10
+
+# Set the current frame
+var current_frame = 0
+
+# Set the time each frame should be displayed
+var frame_duration = 1.0 / animation_speed
+
+# Timer for animation
+var timer = Timer.new()
+
+func _ready():
+    # Connect the timeout signal of the timer to the animation function
+    timer.connect("timeout", self, "_on_timeout")
+
+    # Set the timer's wait time
+    timer.wait_time = frame_duration
+
+    # Start the timer
+    timer.start()
+
+func _process(delta):
+    # Calculate the current column and row of the sprite sheet
+    var current_column = current_frame % sheet_columns
+    var current_row = current_frame // sheet_columns
+
+    # Calculate the width and height of each frame in the sprite sheet
+    var frame_width = 1.0 / sheet_columns
+    var frame_height = 1.0 / sheet_rows
+
+    # Set the frame coordinates in the sprite sheet
+    self.frame_coords = Rect2(current_column * frame_width, current_row * frame_height, frame_width, frame_height)
+
+# Function called on timer timeout
+func _on_timeout():
+    # Increment the current frame
+    current_frame += 1
+
+    # Loop back to the first frame if we've reached the end
+    if current_frame >= total_frames:
+        current_frame = 0
+
+    # Set the timer's wait time
+    timer.wait_time = frame_duration
+
+    # Update the animation frame
+    update()
+"""
+        return script
+
+    def generate_Unity_script(self):
+        """
+        Generates a basic C# script for unity.
+        """
+        script = """using UnityEngine;
+
+public class SpriteSheetAnimator : MonoBehaviour
+{
+    public Texture2D spriteSheet;
+    public int rows = 8; // Number of rows in the sprite sheet
+    public int columns = 8; // Number of columns in the sprite sheet
+    public int framesPerSecond = 12; // Speed of animation
+
+    private SpriteRenderer spriteRenderer;
+    private int currentFrame = 0;
+
+    void Start()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        InvokeRepeating("NextFrame", 1f / framesPerSecond, 1f / framesPerSecond);
+    }
+
+    void NextFrame()
+    {
+        currentFrame = (currentFrame + 1) % (rows * columns);
+
+        int row = currentFrame / columns;
+        int col = currentFrame % columns;
+
+        float width = 1f / columns;
+        float height = 1f / rows;
+
+        Vector2 offset = new Vector2(col * width, 1 - height - row * height);
+
+        spriteRenderer.material.SetTextureOffset("_MainTex", offset);
+        spriteRenderer.material.SetTextureScale("_MainTex", new Vector2(width, height));
+    }
+}
+        """
+        return script
 
     def generate_lsl_script_option_1(self) -> str:
         """

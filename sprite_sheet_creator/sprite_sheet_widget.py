@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QPixmap, QPainter, QTransform, QPen
 from PyQt5.QtWidgets import QWidget, QGraphicsView, QGraphicsScene, QVBoxLayout, QScrollArea, QLabel
 
@@ -7,6 +7,8 @@ import style_sheet
 
 class SpriteSheetWidget(QWidget):
     """Widget for displaying and manipulating sprite sheets."""
+
+    labelClicked = pyqtSignal(str)
 
     def __init__(self, main_console_widget, control_widget):
         """
@@ -18,6 +20,7 @@ class SpriteSheetWidget(QWidget):
         """
         super().__init__()
 
+        self.index_overlay = False
         self.scroll_pos = None
         self.sprite_sheet = None
         self.images = None
@@ -36,7 +39,7 @@ class SpriteSheetWidget(QWidget):
 
         # Create a QLabel
         self.label = QLabel("Sprite Sheet Scale:", self)
-        self.label.setToolTip("Sprite sheet image dimensions.")
+        self.label.setToolTip("Sprite sheet image dimensions.\nClick to copy to clipboard.")
         self.label.setStyleSheet(style_sheet.folder_path_label_style())
         layout.addWidget(self.label)
 
@@ -154,25 +157,35 @@ class SpriteSheetWidget(QWidget):
                 columns = minimum_value
 
             return rows, columns
+
         except Exception as err:
             self.console.append_text("ERROR: calculate_rows_columns: {}".format(err.args))
 
     def calculate_grid_size(self, file_paths, grid_rows, grid_columns):
+        """
+        Calculates the size of a grid.
+
+        Returns:
+            tuple: grid_width, grid_height
+        """
         # if len(file_paths) != grid_rows * grid_columns:
         #     raise ValueError("Number of files does not match the grid size")
+        try:
+            image_width = 0
+            image_height = 0
 
-        image_width = 0
-        image_height = 0
+            for file_path in file_paths:
+                pixmap = QPixmap(file_path)
+                image_width = max(image_width, pixmap.width())
+                image_height = max(image_height, pixmap.height())
 
-        for file_path in file_paths:
-            pixmap = QPixmap(file_path)
-            image_width = max(image_width, pixmap.width())
-            image_height = max(image_height, pixmap.height())
+            grid_width = image_width * grid_columns
+            grid_height = image_height * grid_rows
 
-        grid_width = image_width * grid_columns
-        grid_height = image_height * grid_rows
+            return grid_width, grid_height
 
-        return grid_width, grid_height
+        except Exception as err:
+            self.console.append_text("ERROR: calculate_grid_size: {}".format(err.args))
 
     def toggle_grid_overlay(self):
         try:
@@ -183,8 +196,22 @@ class SpriteSheetWidget(QWidget):
 
             self.console.append_text("INFO: Grid Overlay set to: {}".format(self.grid_overlay))
             self.update_sprite_sheet()
+
         except Exception as err:
             self.console.append_text("ERROR: toggle_grid_overlay: {}".format(err.args))
+
+    def toggle_index_overlay(self):
+        try:
+            if self.index_overlay:
+                self.index_overlay = False
+            else:
+                self.index_overlay = True
+
+            self.console.append_text("INFO: Index Overlay set to: {}".format(self.index_overlay))
+            self.update_sprite_sheet()
+
+        except Exception as err:
+            self.console.append_text("ERROR: toggle_index_overlay: {}".format(err.args))
 
     def toggle_use_scale(self):
         try:
@@ -196,6 +223,7 @@ class SpriteSheetWidget(QWidget):
             self.control.toggle_scale_value_control(self.use_scale)
             self.console.append_text("INFO: Use Scale set to: {}".format(self.use_scale))
             self.update_sprite_sheet()
+
         except Exception as err:
             self.console.append_text("ERROR: toggle_grid_overlay: {}".format(err.args))
 
@@ -207,39 +235,63 @@ class SpriteSheetWidget(QWidget):
             QPixmap: the sprite sheet image.
         """
         try:
-
+            # Get the scale values of the image.
             sprite_sheet_width = self.control.get_image_width_value()
             sprite_sheet_height = self.control.get_image_height_value()
 
+            # Get the rows and columns
             rows, columns = self.calculate_rows_columns()
 
+            # Use the source image's full scale for each cell rather than downscaling the images to fit the grid.
             if self.use_scale:
                 grid_width, grid_height = self.calculate_grid_size(self.images, rows, columns)
                 sprite_sheet_width = grid_width
                 sprite_sheet_height = grid_height
+
+                # append this info to the console.
                 self.console.append_text(
                     "INFO: Generated Sprite Sheet Scale = {}x{}".format(sprite_sheet_width, sprite_sheet_height))
 
-            # Calculate the target width and height for each image or 'cell'
+            # Calculate the target width and height for each image or 'cell'.
             target_width = sprite_sheet_width // columns
             target_height = sprite_sheet_height // rows
 
+            # Update the label showing the current image dimensions.
             self.label.clear()
             self.label.setText("Sprite Sheet Scale: {}x{}, Cell Scale: {}x{}".format(sprite_sheet_width, sprite_sheet_height, target_width, target_height))
 
+            # Connect the clicked signal of the label to the slot function
+            self.label.mousePressEvent = lambda event, value=self.label.text(): self.handle_label_click(event, value)
+
+            # Create the QPixmap for the sprite sheet layer.
             sprite_sheet = QPixmap(sprite_sheet_width, sprite_sheet_height)
             sprite_sheet.fill(Qt.transparent)
 
-            # Create a separate QPixmap for the outline layer
-            outline_layer = QPixmap(sprite_sheet_width, sprite_sheet_height)
-            outline_layer.fill(Qt.transparent)
+            # Create a separate QPixmap for the outline layer.
+            grid_outline_layer = QPixmap(sprite_sheet_width, sprite_sheet_height)
+            grid_outline_layer.fill(Qt.transparent)
 
-            # Create an Outline around images on the sprite sheet
-            painter = QPainter(outline_layer)
+            # Create an Outline around images on the sprite sheet.
+            grid_painter = QPainter(grid_outline_layer)
             # Set the pen color to cyan for the outline and define the line thickness.
-            painter.setPen(QPen(Qt.cyan, 5))
+            grid_painter.setPen(QPen(Qt.cyan, 5))
 
             sprite_painter = QPainter(sprite_sheet)
+
+            # Create a separate QPixmap for the label layer.
+            label_layer = QPixmap(sprite_sheet_width, sprite_sheet_height)
+            label_layer.fill(Qt.transparent)
+
+            # Create a QPainter for the label layer.
+            label_painter = QPainter(label_layer)
+            # Set the font and color for the labels.
+            label_font = label_painter.font()
+            # Adjust the font size as needed
+            label_font.setPointSize(28)
+            label_painter.setFont(label_font)
+            # Set the label text color
+            label_painter.setPen(QPen(Qt.green))
+            
             x = 0
             y = 0
 
@@ -247,39 +299,56 @@ class SpriteSheetWidget(QWidget):
 
             for image in self.images:
                 scaled_image = image.scaled(target_width, target_height, Qt.AspectRatioMode.KeepAspectRatio)
-
-                # index += 1
+                
+                index += 1
                 # image_name = str(self.image_sequence[index])
                 # print(image_name)
                 # self.console.append_text(str(image_name))
 
+                # Calculate the offset to center the images within each cell.
+                offset_x = (target_width - scaled_image.width()) // 2
+                offset_y = (target_height - scaled_image.height()) // 2
+
+                # Calculate the center coordinates for the current cell.
+                cell_center_x = x + offset_x
+                cell_center_y = y + offset_y
+
                 # Draw the outline on the outline layer
                 if self.grid_overlay:
-                    painter.drawRect(x, y, target_width, target_height)
+                    grid_painter.drawRect(x, y, target_width, target_height)
+                
+                # Draw the label on the label layer.
+                if self.index_overlay:
+                    label_text = "{}".format(index)
+                    label_painter.drawText(x, y + 60, label_text)
 
-                # Draw the scaled image on the sprite sheet
-                sprite_painter.drawPixmap(x, y, scaled_image)
+                # Draw the scaled image on the sprite sheet at the center of the cell.
+                sprite_painter.drawPixmap(cell_center_x, cell_center_y, scaled_image)
 
                 x += target_width
-
                 if x >= sprite_sheet_width:
                     x = 0
                     y += target_height
 
-            painter.end()
+            # Stop painting.
+            grid_painter.end()
             sprite_painter.end()
+            label_painter.end()
 
-            # Combine the sprite sheet and the outline layer
+            # Combine the sprite sheet and the outline layer (required to see the outline)
             sprite_sheet_with_outline = QPixmap(sprite_sheet_width, sprite_sheet_height)
             sprite_sheet_with_outline.fill(Qt.transparent)
             sprite_sheet_with_outline_painter = QPainter(sprite_sheet_with_outline)
             sprite_sheet_with_outline_painter.drawPixmap(0, 0, sprite_sheet)
-            sprite_sheet_with_outline_painter.drawPixmap(0, 0, outline_layer)
+            sprite_sheet_with_outline_painter.drawPixmap(0, 0, grid_outline_layer)
+            sprite_sheet_with_outline_painter.drawPixmap(0, 0, label_layer)
             sprite_sheet_with_outline_painter.end()
 
             # TODO: Add Masking layer sequence option.
 
+            # return sprite_sheet
             return sprite_sheet_with_outline
+
         except Exception as err:
             self.console.append_text("ERROR: create_sprite_sheet: {}".format(err.args))
 
@@ -291,6 +360,7 @@ class SpriteSheetWidget(QWidget):
             self.scene.clear()
             self.scene.addPixmap(self.sprite_sheet)
             self.view.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
+
         except Exception as err:
             self.console.append_text("ERROR: display_sprite_sheet: {}".format(err.args))
 
@@ -302,6 +372,7 @@ class SpriteSheetWidget(QWidget):
             if self.images:
                 pixmap = QPixmap(self.sprite_sheet)
                 return pixmap
+
         except Exception as err:
             self.console.append_text("ERROR: display_sprite_sheet: {}".format(err.args))
 
@@ -317,11 +388,10 @@ class SpriteSheetWidget(QWidget):
                 # Only zoom when the Ctrl key is pressed
                 scroll_delta = event.angleDelta().y()
                 zoom_factor = 1.1 if scroll_delta > 0 else 0.9
-
                 cursor_pos = event.pos()
                 self.scroll_pos = self.view.mapToScene(cursor_pos)
-
                 self.zoom_image(zoom_factor)
+
         except Exception as err:
             self.console.append_text("ERROR: wheelEvent: {}".format(err.args))
 
@@ -336,8 +406,8 @@ class SpriteSheetWidget(QWidget):
 
         try:
             old_pos = self.view.mapToScene(self.view.viewport().rect().center())
-
             self.scale_factor *= zoom_factor
+
             if self.scale_factor < self.min_scale_factor:
                 self.scale_factor = self.min_scale_factor
             elif self.scale_factor > self.max_scale_factor:
@@ -368,6 +438,7 @@ class SpriteSheetWidget(QWidget):
         """
         try:
             self.view.fitInView(self.scene.itemsBoundingRect(), Qt.KeepAspectRatio)
+
         except Exception as err:
             self.console.append_text("ERROR: fit_to_widget: {}".format(err.args))
 
@@ -388,3 +459,14 @@ class SpriteSheetWidget(QWidget):
 
         """
         self.fit_to_widget()
+
+    def handle_label_click(self, event, text_value:str):
+        """
+        Handle the click event on an image.
+
+        Args:
+            event (QMouseEvent): The mouse event.
+            text_value (str): The text currently displaying the dimensions of the sprite sheet.
+        """
+        if event.button() == Qt.LeftButton:
+            self.labelClicked.emit(text_value)

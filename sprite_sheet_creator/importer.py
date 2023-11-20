@@ -304,13 +304,13 @@ class ImportExporter():
         except Exception as err:
             self.console.append_text("ERROR: export_as_webm: {}".format(err.args))
 
-    def save_lsl_script_1_file(self, script: str) -> None:
+    def save_script(self, name: str, script: str) -> None:
         """
-        Saves the lsl script to the specified directory.
+        Saves the script to the specified directory.
         """
         try:
             if script:
-                filename = "Single_Texture_Animation_Script.txt"  # Change the filename extension to .webm
+                filename = "{}_Animation_Script.txt".format(name)
                 save_path, _ = QFileDialog.getSaveFileName(
                     caption="Save text file",
                     directory=filename,
@@ -321,22 +321,3 @@ class ImportExporter():
 
         except Exception as err:
             self.console.append_text("ERROR: save_lsl_script_1_file: {}".format(err.args))
-
-    def save_lsl_script_2_file(self, script: str) -> None:
-        """
-        Saves the lsl script to the specified directory.
-        """
-        try:
-            if script:
-                filename = "Sequence_Texture_Animation_Script.txt"  # Change the filename extension to .webm
-                save_path, _ = QFileDialog.getSaveFileName(
-                    caption="Save text file",
-                    directory=filename,
-                    filter="Text Files (*.txt)")
-                if save_path:
-                    with open(save_path, "w") as file:
-                        file.write(script)
-
-        except Exception as err:
-            self.console.append_text("ERROR: save_lsl_script_2_file: {}".format(err.args))
-

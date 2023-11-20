@@ -38,6 +38,7 @@ class ControlWidget(QWidget):
     playClicked = pyqtSignal()
     stopClicked = pyqtSignal()
     use_grid_checkboxStateChanged = pyqtSignal(bool)
+    use_index_checkboxStateChanged = pyqtSignal(bool)
     use_scale_checkboxStateChanged = pyqtSignal(bool)
 
     def __init__(self, main_console_widget):
@@ -136,6 +137,12 @@ class ControlWidget(QWidget):
             "toggle on or off the outline around each cell for clear visibility.\n"
             "This layer is baked into the sprite sheet if left enabled on export.")
 
+        self.use_index_checkbox = QCheckBox("Index Overlay")
+        self.use_index_checkbox.setChecked(False)
+        self.use_index_checkbox.setToolTip(
+            "toggle on or off the frame number for clear visibility.\n"
+            "This layer is baked into the sprite sheet if left enabled on export.")
+
         self.use_scale_checkbox = QCheckBox("Original scale")
         self.use_scale_checkbox.setChecked(False)
         self.use_scale_checkbox.setToolTip(
@@ -147,6 +154,7 @@ class ControlWidget(QWidget):
         self.console.append_text("INFO: Grid Rows = {}".format(self.grid_rows_input.value()))
         self.console.append_text("INFO: Grid Columns = {}".format(self.grid_columns_input.value()))
         self.console.append_text("INFO: Grid Overlay = {}".format(self.use_grid_checkbox.isChecked()))
+        self.console.append_text("INFO: Index Overlay = {}".format(self.use_index_checkbox.isChecked()))
         self.console.append_text("INFO: Use Original Scale = {}".format(self.use_scale_checkbox.isChecked()))
         self.console.append_text("INFO: sprite sheet width = {}".format(self.image_width_input.value()))
         self.console.append_text("INFO: sprite sheet height = {}".format(self.image_height_input.value()))
@@ -180,10 +188,10 @@ class ControlWidget(QWidget):
         separator7.setFrameShadow(QFrame.Sunken)
         separator7.setFixedHeight(2)
 
-        separator8 = QFrame()
-        separator8.setFrameShape(QFrame.HLine)
-        separator8.setFrameShadow(QFrame.Sunken)
-        separator8.setFixedHeight(2)
+        # separator8 = QFrame()
+        # separator8.setFrameShape(QFrame.HLine)
+        # separator8.setFrameShadow(QFrame.Sunken)
+        # separator8.setFixedHeight(2)
 
         controls = [
             (play_button, stop_button),
@@ -194,10 +202,10 @@ class ControlWidget(QWidget):
             (start_frame_label, self.start_frame_input),
             (end_frame_label, self.end_frame_input),
             (separator5, separator6),
-            (self.use_grid_checkbox, separator7),
+            (self.use_grid_checkbox, self.use_index_checkbox),
             (grid_rows_label, self.grid_rows_input),
             (grid_columns_label, self.grid_columns_input),
-            (self.use_scale_checkbox, separator8),
+            (self.use_scale_checkbox, separator7),
             (image_width_label, self.image_width_input),
             (image_height_label, self.image_height_input)
         ]
@@ -235,6 +243,7 @@ class ControlWidget(QWidget):
         self.image_width_input.valueChanged.connect(self.imagewidthValueChanged.emit)
         self.image_height_input.valueChanged.connect(self.imageheightValueChanged.emit)
         self.use_grid_checkbox.stateChanged.connect(self.use_grid_checkboxStateChanged.emit)
+        self.use_index_checkbox.stateChanged.connect(self.use_index_checkboxStateChanged.emit)
         self.use_scale_checkbox.stateChanged.connect(self.use_scale_checkboxStateChanged.emit)
         play_button.clicked.connect(self.playClicked.emit)
         stop_button.clicked.connect(self.stopClicked.emit)

@@ -2,6 +2,7 @@ import os
 import sys
 
 import psutil
+import pyperclip
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
@@ -52,7 +53,7 @@ class MainWindow(QMainWindow):
         self.exit_signal.exit_signal.connect(self.exit_application)
 
         # TODO: find a good way to auto set this value.
-        self.version_number = "v1.0.2"
+        self.version_number = "v1.0.3"
 
         # Set window title
         self.image_sequence = None
@@ -144,6 +145,9 @@ class MainWindow(QMainWindow):
         # Connect the menu bar signal using instance for scripts menu
         self.menu_bar.lsl_script_1.connect(self.provide_lsl_script_1)
         self.menu_bar.lsl_script_2.connect(self.provide_lsl_script_2)
+        self.menu_bar.unity_script.connect(self.provide_unity_script)
+        self.menu_bar.godot_script.connect(self.provide_godot_script)
+        self.menu_bar.pygame_script.connect(self.provide_pygame_script)
 
         # Add the menu bar to the main window
         menu = self.menu_bar.create_menu_bar()
@@ -155,6 +159,7 @@ class MainWindow(QMainWindow):
         self.control_widget.startframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.endframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.use_grid_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_grid_overlay)
+        self.control_widget.use_index_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_index_overlay)
         self.control_widget.use_scale_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_use_scale)
         self.control_widget.gridrowValueChanged.connect(self.update_playback_display)
         self.control_widget.gridcolumnValueChanged.connect(self.update_playback_display)
@@ -163,6 +168,7 @@ class MainWindow(QMainWindow):
         self.control_widget.playClicked.connect(self.playback_widget.start_playback)
         self.control_widget.stopClicked.connect(self.playback_widget.stop_playback)
         self.image_sequence_widget.imageClicked.connect(self.handle_image_clicked)
+        self.sprite_sheet_widget.labelClicked.connect(self.copy_to_clipboard)
         self.image_viewer_widget.imagepathClicked.connect(self.open_file_path)
 
         # add the widgets to the main window.
@@ -195,15 +201,33 @@ class MainWindow(QMainWindow):
 
         self.main_console_widget.append_text("INFO: Finished loading all widgets.\n")
 
-    def provide_lsl_script_1(self):
+    def provide_lsl_script_1(self) -> None:
+        """
+        Gets and sets the desired script and then exports it.
+        """
         scripts = ScriptGenerator()
         script = scripts.generate_lsl_script_option_1()
-        self.import_export.save_lsl_script_1_file(script)
+        self.import_export.save_script("LSL", script)
 
-    def provide_lsl_script_2(self):
+    def provide_lsl_script_2(self) -> None:
         scripts = ScriptGenerator()
         script = scripts.generate_lsl_script_option_2()
-        self.import_export.save_lsl_script_2_file(script)
+        self.import_export.save_script("LSL_Seq", script)
+
+    def provide_unity_script(self) -> None:
+        scripts = ScriptGenerator()
+        script = scripts.generate_Unity_script()
+        self.import_export.save_script("Unity", script)
+
+    def provide_godot_script(self) -> None:
+        scripts = ScriptGenerator()
+        script = scripts.generate_godot_script()
+        self.import_export.save_script("Godot", script)
+
+    def provide_pygame_script(self) -> None:
+        scripts = ScriptGenerator()
+        script = scripts.generate_pygame_script()
+        self.import_export.save_script("PyGame", script)
 
     def open_file_path(self, file_path) -> None:
         """
@@ -228,7 +252,7 @@ class MainWindow(QMainWindow):
         except Exception as err:
             self.main_console_widget.append_text(str(err.args))
 
-    def handle_image_clicked(self, image_path) -> None:
+    def handle_image_clicked(self, image_path: str) -> None:
         """
         Handle the image click event.
 
@@ -242,7 +266,13 @@ class MainWindow(QMainWindow):
         except Exception as err:
             self.main_console_widget.append_text(str(err.args))
 
-    def handle_image_path_clicked(self, image_path) -> None:
+    def copy_to_clipboard(self, text_value: str) -> None:
+        """
+        Copies the provided string to the clipboard.
+        """
+        pyperclip.copy(text_value)
+
+    def handle_image_path_clicked(self, image_path: str) -> None:
         """
         Handles the click event for an image path.
 
@@ -296,13 +326,13 @@ class MainWindow(QMainWindow):
         self.image_sequence = self.import_export.import_as_gif()
         self.populate_image_sequence(self.image_sequence)
 
-    def export_gif(self):
+    def export_gif(self) -> None:
         """
         Exports the image sequence as a .gif
         """
         self.import_export.export_as_gif(self.image_sequence)
 
-    def export_webm(self):
+    def export_webm(self) -> None:
         """
         Exports the image sequence as a .gif
         """
@@ -316,13 +346,13 @@ class MainWindow(QMainWindow):
         self.image_sequence = self.import_export.import_as_mp4()
         self.populate_image_sequence(self.image_sequence)
 
-    def export_mp4(self):
+    def export_mp4(self) -> None:
         """
         Exports the image sequence as a .mp4
         """
         self.import_export.export_as_mp4(self.image_sequence)
 
-    def populate_image_sequence(self, image_sequence):
+    def populate_image_sequence(self, image_sequence) -> None:
         """
         Populates all the widgets with the image sequence.
 
@@ -409,7 +439,7 @@ class MainWindow(QMainWindow):
         self.image_viewer_widget.fit_to_widget()
         self.playback_widget.fit_to_widget()
 
-    def exit_application(self):
+    def exit_application(self) -> None:
         """
         Exit the application gracefully.
 

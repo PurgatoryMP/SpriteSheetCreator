@@ -474,44 +474,51 @@ def explore_folder_btn_style():
 
 def image_grid_image_style():
     style_sheet = """
-            QLabel:hover {
+        QLabel:hover {
             background-color: #6b7c80;
             border: 1px solid gold;
             border-radius: 8px;
-            }
+        }
         """
     return style_sheet
 
 def image_grid_label_style():
     style_sheet = """
-            QLabel {
-                background-color: #434D4F;
-                color: White;
-                font-size: 14px;
-                border: 1px solid Black;
-                border-radius: 8px;
-                padding: 4px;
+        QLabel {
+            background-color: #434D4F;
+            color: White;
+            font-size: 14px;
+            border: 1px solid Black;
+            border-radius: 8px;
+            padding: 4px;
 
-            }
-            QLabel:hover {
+        }
+        QLabel:hover {
             background-color: #6b7c80;
             border: 1px solid gold;
             border-radius: 8px;
-            }
+        }
         """
     return style_sheet
 
 def folder_path_label_style():
     style_sheet = """
-            QLabel {
-                background-color: #434D4F;
-                color: White;
-                font-size: 14px;
-                border: 1px solid Black;
-                border-radius: 8px;
-                padding: 4px;
+        QLabel {
+            cursor: DragCopyCursor;
+            background-color: #434D4F;
+            color: White;
+            font-size: 14px;
+            border: 1px solid Black;
+            border-radius: 8px;
+            padding: 4px;
 
+        }
+        QLabel:hover {
+            background-color: #4F5B5D;
+            border: 1px solid gold;
+            border-radius: 8px;
             }
+        }
         """
     return style_sheet
 
