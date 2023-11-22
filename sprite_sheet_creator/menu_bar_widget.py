@@ -37,6 +37,12 @@ class MenuBar(QMenuBar):
     unity_script = pyqtSignal()
     godot_script = pyqtSignal()
     pygame_script = pyqtSignal()
+    image_convert = pyqtSignal()
+    seq_convert = pyqtSignal()
+    gif_convert = pyqtSignal()
+    mp4_convert = pyqtSignal()
+    webm_convert = pyqtSignal()
+    icon_convert = pyqtSignal()
     importimagesequence = pyqtSignal()
     exportimagesequence = pyqtSignal()
     exportspritesheet = pyqtSignal()
@@ -56,9 +62,31 @@ class MenuBar(QMenuBar):
         """
         super().__init__()
 
+        self.icon_convert_action = None
+        self.image_convert_action = None
+        self.webm_convert_action = None
+        self.mp4_convert_action = None
+        self.gif_convert_action = None
+        self.seq_convert_action = None
+        self.pygame_script_action = None
+        self.godot_script_action = None
+        self.unity_script_action = None
+        self.lsl_script_2_action = None
+        self.lsl_script_1_action = None
+        self.exit_action = None
+        self.export_mp4_file_action = None
+        self.import_mp4_file_action = None
+        self.export_webm_file_action = None
+        self.export_gif_file_action = None
+        self.import_gif_file_action = None
+        self.export_sprite_sheet_action = None
+        self.export_image_sequence_action = None
+        self.import_image_sequence_action = None
+
         # Add the console widget.
         self.console = main_console_widget
         self.console.append_text("INFO: Loading Menu Bar Widget.----------------")
+
         self.create_menu_bar()
 
     def create_menu_bar(self):
@@ -68,10 +96,13 @@ class MenuBar(QMenuBar):
         Returns:
             menubar: The created QMenuBar.
         """
+        # Create the menu bar.
         menubar = QMenuBar()
 
+        # Create the menu bar options.
         file_menu = menubar.addMenu("File")
         script_menu = menubar.addMenu("Scripts")
+        convert_menu = menubar.addMenu("Converters")
 
         # Create the file menu items.
         self.import_image_sequence_action = QAction("Import Image Sequence", menubar)
@@ -82,16 +113,24 @@ class MenuBar(QMenuBar):
         self.export_webm_file_action = QAction("Export Webm File", menubar)
         self.import_mp4_file_action = QAction("Import MP4 File", menubar)
         self.export_mp4_file_action = QAction("Export MP4 File", menubar)
-        # self.convert_mp4_to_sequence_action = QAction("Convert MP4 to Sequence", menubar)
         self.exit_action = QAction("Exit", menubar)
 
+        # Create the script menu items.
         self.lsl_script_1_action = QAction("Save Single LSL Script", menubar)
         self.lsl_script_2_action = QAction("Save Seq. LSL Script", menubar)
         self.unity_script_action = QAction("Save Unity C# Script", menubar)
         self.godot_script_action = QAction("Save Godot GDScript", menubar)
         self.pygame_script_action = QAction("Save PyGame PyScript", menubar)
 
-        # Connect to a separate method
+        # Create the script menu items.
+        self.image_convert_action = QAction("Convert to Image Type", menubar)
+        self.seq_convert_action = QAction("Convert to Image Sequence", menubar)
+        self.gif_convert_action = QAction("Convert to Gif", menubar)
+        self.mp4_convert_action = QAction("Convert to Video", menubar)
+        self.webm_convert_action = QAction("Convert to Web", menubar)
+        self.icon_convert_action = QAction("Convert to Icon", menubar)
+
+        # Connect to a separate method.
         self.import_image_sequence_action.triggered.connect(self.emit_import_image_sequence)
         self.export_image_sequence_action.triggered.connect(self.emit_export_image_sequence)
         self.export_sprite_sheet_action.triggered.connect(self.emit_export_sprite_sheet)
@@ -108,6 +147,14 @@ class MenuBar(QMenuBar):
         self.unity_script_action.triggered.connect(self.emit_unity_script)
         self.godot_script_action.triggered.connect(self.emit_godot_script)
         self.pygame_script_action.triggered.connect(self.emit_pygame_script)
+
+        # connect the convert options.
+        self.image_convert_action.triggered.connect(self.emit_image_convert)
+        self.seq_convert_action.triggered.connect(self.emit_seq_convert)
+        self.gif_convert_action.triggered.connect(self.emit_gif_convert)
+        self.mp4_convert_action.triggered.connect(self.emit_mp4_convert)
+        self.webm_convert_action.triggered.connect(self.emit_webm_convert)
+        self.icon_convert_action.triggered.connect(self.emit_icon_convert)
 
         # Add the actions to the menu
         file_menu.addAction(self.import_image_sequence_action)
@@ -132,12 +179,58 @@ class MenuBar(QMenuBar):
         script_menu.addAction(self.godot_script_action)
         script_menu.addAction(self.pygame_script_action)
 
+        # Add the convert actions to the menu
+        convert_menu.addAction(self.image_convert_action)
+        convert_menu.addAction(self.seq_convert_action)
+        convert_menu.addAction(self.gif_convert_action)
+        convert_menu.addAction(self.mp4_convert_action)
+        convert_menu.addAction(self.webm_convert_action)
+        convert_menu.addAction(self.icon_convert_action)
+
+        # Apply the style settings to each of the menus
         file_menu.setStyleSheet(style_sheet.menu_bar_style())
         script_menu.setStyleSheet(style_sheet.menu_bar_style())
+        convert_menu.setStyleSheet(style_sheet.menu_bar_style())
 
         self.console.append_text("INFO: Finished Loading Menu Bar Widget.")
 
         return menubar
+
+    def emit_icon_convert(self) -> None:
+        """
+        Emit the icon_convert signal.
+        """
+        self.icon_convert.emit()
+
+    def emit_image_convert(self) -> None:
+        """
+        Emit the image_convert signal.
+        """
+        self.image_convert.emit()
+
+    def emit_webm_convert(self) -> None:
+        """
+        Emit the webm_convert signal.
+        """
+        self.webm_convert.emit()
+
+    def emit_mp4_convert(self) -> None:
+        """
+        Emit the gif_convert signal.
+        """
+        self.mp4_convert.emit()
+
+    def emit_gif_convert(self) -> None:
+        """
+        Emit the gif_convert signal.
+        """
+        self.gif_convert.emit()
+
+    def emit_seq_convert(self) -> None:
+        """
+        Emit the seq_convert signal.
+        """
+        self.seq_convert.emit()
 
     def emit_pygame_script(self) -> None:
         """
