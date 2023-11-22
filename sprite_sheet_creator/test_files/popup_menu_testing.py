@@ -1,8 +1,8 @@
 import sys
-
-from PIL import Image
+from PIL import Image, ImageSequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QVBoxLayout, QDialog, QLabel, QPushButton, \
     QComboBox, QMessageBox
+import apng
 
 
 class ConvertImageDialog(QDialog):
@@ -20,7 +20,7 @@ class ConvertImageDialog(QDialog):
         self.convert_button = QPushButton("Convert")
 
         # Supported image formats
-        self.supported_formats = ["PNG", "JPEG", "GIF", "BMP"]
+        self.supported_formats = ["PNG", "JPEG", "APNG", "GIF", "BMP"]
 
         # Populate combo box with supported formats
         self.format_combobox.addItems(self.supported_formats)
@@ -44,8 +44,9 @@ class ConvertImageDialog(QDialog):
         options |= QFileDialog.DontUseNativeDialog
         file_dialog = QFileDialog()
         file_dialog.setFileMode(QFileDialog.ExistingFile)
-        file_dialog.setNameFilter("Images (*.png *.jpg *.jpeg *.gif *.bmp)")
-        file_path, _ = QFileDialog.getOpenFileName(self, "Open Image", "", "Images (*.png *.jpg *.jpeg *.gif *.bmp)")
+        file_dialog.setNameFilter("Images (*.png *.jpg *.jpeg *.apng *.gif *.bmp)")
+        file_path, _ = QFileDialog.getOpenFileName(self, "Open Image", "",
+                                                   "Images (*.png *.jpg *.jpeg *.apng *.gif *.bmp)")
 
         if file_path:
             self.image_path_label.setText(file_path)
@@ -59,12 +60,27 @@ class ConvertImageDialog(QDialog):
 
         # Convert image
         try:
-            image = Image.open(input_path)
-            output_path = input_path.rsplit('.', 1)[0] + "." + output_format.lower()
-            image.save(output_path, format=output_format)
+            if output_format == "APNG":
+                # No need to convert, as APNG is already supported
+                output_path = input_path.rsplit('.', 1)[0] + "." + output_format.lower()
+                Image.open(input_path).save(output_path, format=output_format)
+            elif output_format == "GIF":
+                # Convert APNG to GIF using apng2gif
+                apng_image = apng.APNG.open(input_path)
+                output_path = input_path.rsplit('.', 1)[0] + "." + output_format.lower()
+                gif_frames = [frame.to_pil() for frame in apng_image.frames]
+                gif_frames[0].save(output_path, save_all=True, append_images=gif_frames[1:],
+                                   duration=apng_image.playtime * 1000, loop=0)
+            else:
+                # Convert other formats using PIL
+                image = Image.open(input_path)
+                output_path = input_path.rsplit('.', 1)[0] + "." + output_format.lower()
+                image.save(output_path, format=output_format)
+
             QMessageBox.information(self, "Conversion Successful", "Image converted successfully.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error converting image: {str(e)}")
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -85,6 +101,7 @@ class MainWindow(QMainWindow):
     def open_convert_image_dialog(self):
         convert_dialog = ConvertImageDialog(self)
         convert_dialog.exec_()
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
