@@ -226,131 +226,131 @@ class PlaybackWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: update_frame: {}".format(err.args))
 
-    def wheelEvent(self, event):
-        """
-        Handles the wheel event.
-
-        Args:
-            event (QWheelEvent): The wheel event object.
-        """
-        try:
-            if event.modifiers() == Qt.ControlModifier:
-                if not self.image_sequence:
-                    return
-
-                delta = event.angleDelta().y() / 120
-                zoom_factor = 1.1 ** delta
-                new_zoom_factor = self.zoom_factor * zoom_factor
-
-                if self.minimum_zoom <= new_zoom_factor <= self.maximum_zoom:
-                    self.zoom_factor = new_zoom_factor
-
-                cursor_pos = self.view.mapFromGlobal(event.globalPos())
-                self.zoom_origin = cursor_pos
-
-                if 0 <= self.current_frame < len(self.image_sequence):
-                    image = self.image_sequence[self.current_frame]
-                    pixmap = QPixmap.fromImage(image)
-
-                    self.scene.clear()
-                    self.scene.addPixmap(self.zoomed_pixmap(pixmap))
-
-                    # Apply the zoom factor to the view
-                    self.view.setTransform(QTransform().scale(self.zoom_factor, self.zoom_factor))
-
-                    # Adjust the scroll bars to keep the view centered
-                    scroll_area = self.view.parentWidget()
-                    horizontal_bar = scroll_area.horizontalScrollBar()
-                    vertical_bar = scroll_area.verticalScrollBar()
-
-                    # Calculate the center point of the view
-                    view_rect = self.view.viewport().rect()
-                    center_point = view_rect.center()
-
-                    # Adjust the scroll bars to keep the center point visible
-                    horizontal_bar.setValue(horizontal_bar.value() + cursor_pos.x() - center_point.x())
-                    vertical_bar.setValue(vertical_bar.value() + cursor_pos.y() - center_point.y())
-
-        except Exception as err:
-            self.console.append_text("ERROR: wheelEvent: {}".format(err.args))
-
-    def mousePressEvent(self, event):
-        """
-        Handles the mouse press event.
-
-        Args:
-            event (QMouseEvent): The mouse event object.
-        """
-        try:
-            if event.button() == Qt.LeftButton:
-                self.drag_origin = event.pos()
-                self.dragging = True
-        except Exception as err:
-            self.console.append_text("ERROR: mousePressEvent: {}".format(err.args))
-
-    def mouseMoveEvent(self, event):
-        """
-        Handles the mouse move event.
-
-        Args:
-            event (QMouseEvent): The mouse event object.
-        """
-        try:
-            if self.dragging:
-                delta = event.pos() - self.drag_origin
-                self.drag_origin = event.pos()
-
-                self.label.scroll(-delta.x(), -delta.y())
-        except Exception as err:
-            self.console.append_text("ERROR: mouseMoveEvent: {}".format(err.args))
-
-    def mouseReleaseEvent(self, event):
-        """
-        Handles the mouse release event.
-
-        Args:
-            event (QMouseEvent): The mouse event object.
-        """
-        try:
-            if event.button() == Qt.LeftButton:
-                self.dragging = False
-        except Exception as err:
-            self.console.append_text("ERROR: mouseReleaseEvent: {}".format(err.args))
-
-    def zoomed_pixmap(self, pixmap):
-        """
-        Applies zooming to the pixmap.
-
-        Args:
-            pixmap (QPixmap): The pixmap object.
-
-        Returns:
-            QPixmap: The zoomed pixmap.
-        """
-        try:
-            if self.zoom_factor != 1.0:
-                transform = QTransform()
-                transform.translate(self.zoom_origin.x(), self.zoom_origin.y())
-                transform.scale(self.zoom_factor, self.zoom_factor)
-                transform.translate(-self.zoom_origin.x(), -self.zoom_origin.y())
-                pixmap = pixmap.transformed(transform, Qt.SmoothTransformation)
-            return pixmap
-        except Exception as err:
-            self.console.append_text("ERROR: zoomed_pixmap: {}".format(err.args))
-
-    @property
-    def minimum_zoom(self):
-        """
-        float: The minimum zoom factor.
-        """
-        return 0.1  # Adjust the minimum zoom factor as desired
-
-    @property
-    def maximum_zoom(self):
-        """
-        float: The maximum zoom factor.
-        """
-        return 5.0  # Adjust the maximum zoom factor as desired
+    # def wheelEvent(self, event):
+    #     """
+    #     Handles the wheel event.
+    #
+    #     Args:
+    #         event (QWheelEvent): The wheel event object.
+    #     """
+    #     try:
+    #         if event.modifiers() == Qt.ControlModifier:
+    #             if not self.image_sequence:
+    #                 return
+    #
+    #             delta = event.angleDelta().y() / 120
+    #             zoom_factor = 1.1 ** delta
+    #             new_zoom_factor = self.zoom_factor * zoom_factor
+    #
+    #             if self.minimum_zoom <= new_zoom_factor <= self.maximum_zoom:
+    #                 self.zoom_factor = new_zoom_factor
+    #
+    #             cursor_pos = self.view.mapFromGlobal(event.globalPos())
+    #             self.zoom_origin = cursor_pos
+    #
+    #             if 0 <= self.current_frame < len(self.image_sequence):
+    #                 image = self.image_sequence[self.current_frame]
+    #                 pixmap = QPixmap.fromImage(image)
+    #
+    #                 self.scene.clear()
+    #                 self.scene.addPixmap(self.zoomed_pixmap(pixmap))
+    #
+    #                 # Apply the zoom factor to the view
+    #                 self.view.setTransform(QTransform().scale(self.zoom_factor, self.zoom_factor))
+    #
+    #                 # Adjust the scroll bars to keep the view centered
+    #                 scroll_area = self.view.parentWidget()
+    #                 horizontal_bar = scroll_area.horizontalScrollBar()
+    #                 vertical_bar = scroll_area.verticalScrollBar()
+    #
+    #                 # Calculate the center point of the view
+    #                 view_rect = self.view.viewport().rect()
+    #                 center_point = view_rect.center()
+    #
+    #                 # Adjust the scroll bars to keep the center point visible
+    #                 horizontal_bar.setValue(horizontal_bar.value() + cursor_pos.x() - center_point.x())
+    #                 vertical_bar.setValue(vertical_bar.value() + cursor_pos.y() - center_point.y())
+    #
+    #     except Exception as err:
+    #         self.console.append_text("ERROR: wheelEvent: {}".format(err.args))
+    #
+    # def mousePressEvent(self, event):
+    #     """
+    #     Handles the mouse press event.
+    #
+    #     Args:
+    #         event (QMouseEvent): The mouse event object.
+    #     """
+    #     try:
+    #         if event.button() == Qt.LeftButton:
+    #             self.drag_origin = event.pos()
+    #             self.dragging = True
+    #     except Exception as err:
+    #         self.console.append_text("ERROR: mousePressEvent: {}".format(err.args))
+    #
+    # def mouseMoveEvent(self, event):
+    #     """
+    #     Handles the mouse move event.
+    #
+    #     Args:
+    #         event (QMouseEvent): The mouse event object.
+    #     """
+    #     try:
+    #         if self.dragging:
+    #             delta = event.pos() - self.drag_origin
+    #             self.drag_origin = event.pos()
+    #
+    #             self.label.scroll(-delta.x(), -delta.y())
+    #     except Exception as err:
+    #         self.console.append_text("ERROR: mouseMoveEvent: {}".format(err.args))
+    #
+    # def mouseReleaseEvent(self, event):
+    #     """
+    #     Handles the mouse release event.
+    #
+    #     Args:
+    #         event (QMouseEvent): The mouse event object.
+    #     """
+    #     try:
+    #         if event.button() == Qt.LeftButton:
+    #             self.dragging = False
+    #     except Exception as err:
+    #         self.console.append_text("ERROR: mouseReleaseEvent: {}".format(err.args))
+    #
+    # def zoomed_pixmap(self, pixmap):
+    #     """
+    #     Applies zooming to the pixmap.
+    #
+    #     Args:
+    #         pixmap (QPixmap): The pixmap object.
+    #
+    #     Returns:
+    #         QPixmap: The zoomed pixmap.
+    #     """
+    #     try:
+    #         if self.zoom_factor != 1.0:
+    #             transform = QTransform()
+    #             transform.translate(self.zoom_origin.x(), self.zoom_origin.y())
+    #             transform.scale(self.zoom_factor, self.zoom_factor)
+    #             transform.translate(-self.zoom_origin.x(), -self.zoom_origin.y())
+    #             pixmap = pixmap.transformed(transform, Qt.SmoothTransformation)
+    #         return pixmap
+    #     except Exception as err:
+    #         self.console.append_text("ERROR: zoomed_pixmap: {}".format(err.args))
+    #
+    # @property
+    # def minimum_zoom(self):
+    #     """
+    #     float: The minimum zoom factor.
+    #     """
+    #     return 0.1  # Adjust the minimum zoom factor as desired
+    #
+    # @property
+    # def maximum_zoom(self):
+    #     """
+    #     float: The maximum zoom factor.
+    #     """
+    #     return 5.0  # Adjust the maximum zoom factor as desired
 
     def resizeEvent(self, event) -> None:
         """

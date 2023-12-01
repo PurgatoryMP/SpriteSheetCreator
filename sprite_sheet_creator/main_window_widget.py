@@ -53,7 +53,7 @@ class MainWindow(QMainWindow):
         self.exit_signal.exit_signal.connect(self.exit_application)
 
         # TODO: find a good way to auto set this value.
-        self.version_number = "v1.0.3"
+        self.version_number = "v1.0.4"
 
         # Set window title
         self.image_sequence = None

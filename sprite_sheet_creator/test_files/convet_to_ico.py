@@ -1,5 +1,6 @@
 from PIL import Image
 
+
 def convert_png_to_ico(input_png_path, output_ico_path):
     try:
         # Open the PNG image
@@ -17,6 +18,7 @@ def convert_png_to_ico(input_png_path, output_ico_path):
 
     except Exception as e:
         print(f"Error: {e}")
+
 
 # Example usage:
 source = r"G:/Models/Textures/Icons/Icon1.png"
