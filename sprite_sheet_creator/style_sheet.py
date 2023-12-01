@@ -274,6 +274,16 @@ def graphics_scene_style():
     """ % get_style()
     return style_sheet
 
+def checkbox_style():
+    style_sheet = """
+        QCheckBox {
+            border: none;
+            font-size: %(Font_Size)s;
+            color: %(Font_Color)s;
+    }
+    """ % get_style()
+    return style_sheet
+
 
 def spinbox_style():
     # arrow_pixmap = image_generator.generate_arrow_image()

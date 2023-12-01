@@ -11,11 +11,11 @@ from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 
-class ImportExporter():
+class ImportExporter:
+
     def __init__(self, main_console_widget, control_widget):
         self.path = None
         self.console = main_console_widget
-        self.console.append_text("INFO: Loading Import/Exporter functions.----------------")
 
         self.control = control_widget
 
@@ -25,7 +25,7 @@ class ImportExporter():
         if not os.path.exists(self.temp_directory):
             os.mkdir(self.temp_directory)
 
-        self.console.append_text("INFO: Finished Loading Import/Exporter functions.")
+        self.console.append_text("INFO: Import/Exporter Loaded.")
 
     def clean_up_temp_directory(self) -> None:
         """

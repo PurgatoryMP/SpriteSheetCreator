@@ -24,7 +24,6 @@ class ImageSequenceWidget(QWidget):
         self.table = table_widget
 
         self.console = main_console_widget
-        self.console.append_text("INFO: Loading Image Sequence Widget.----------------")
 
         self.start_frame = control_widget.get_start_frame_value()
         self.end_frame = control_widget.get_end_frame_value()
@@ -47,7 +46,7 @@ class ImageSequenceWidget(QWidget):
 
         self.setLayout(self.main_layout)
 
-        self.console.append_text("INFO: Finished Loading Image Sequence Widget.")
+        self.console.append_text("INFO: Image Sequence Widget Loaded.")
 
     def load_sequence(self, image_sequence_list):
         """

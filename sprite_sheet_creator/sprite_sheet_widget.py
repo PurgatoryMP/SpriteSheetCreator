@@ -29,8 +29,6 @@ class SpriteSheetWidget(QWidget):
         self.console = main_console_widget
         self.control = control_widget
 
-        self.console.append_text("INFO: Loading Sprite Sheet Widget.----------------")
-
         self.image_sequence = []
 
         # Create the main layout
@@ -76,7 +74,7 @@ class SpriteSheetWidget(QWidget):
         self.resize_timer.setSingleShot(True)
         self.resize_timer.timeout.connect(self.report_size)
 
-        self.console.append_text("INFO: Finished Loading Sprite Sheet Widget.")
+        self.console.append_text("INFO: Sprite Sheet Widget Loaded.")
 
     def load_images(self, sequence: list) -> None:
         """Loads the provided image sequence.

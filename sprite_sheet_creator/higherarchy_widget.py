@@ -9,7 +9,6 @@ class FileTableWidget(QWidget):
         super().__init__()
 
         self.console = main_console_widget
-        self.console.append_text("INFO: Loading Table Widget.----------------")
 
         # Set up the layout
         layout = QVBoxLayout()
@@ -23,7 +22,7 @@ class FileTableWidget(QWidget):
         # Set the header
         self.set_header()
 
-        self.console.append_text("INFO: Finished Loading Table Widget.")
+        self.console.append_text("INFO: Table Widget Loaded.")
 
     def set_header(self):
         """

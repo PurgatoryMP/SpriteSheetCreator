@@ -36,7 +36,6 @@ class PlaybackWidget(QWidget):
         self.scene = None
         self.view = None
         self.console = main_console_widget
-        self.console.append_text("INFO: Loading Playback Widget.----------------")
         self.is_playing = False
         self.status = status_bar
         self.status.set_status_text("N/A")
@@ -60,7 +59,7 @@ class PlaybackWidget(QWidget):
         self.resize_timer.setSingleShot(True)
         self.resize_timer.timeout.connect(self.report_size)
 
-        self.console.append_text("INFO: Finished loading Playback Widget.")
+        self.console.append_text("INFO: Playback Widget Loaded.")
 
     def setup_ui(self):
         """
@@ -68,7 +67,6 @@ class PlaybackWidget(QWidget):
         """
         try:
             layout = QVBoxLayout(self)
-
             self.view = QGraphicsView(self)
             self.scene = QGraphicsScene(self)
             self.view.setScene(self.scene)
@@ -106,7 +104,7 @@ class PlaybackWidget(QWidget):
                 # start the playback after the image sequence is done loading.
                 self.start_playback()
                 self.display_playtime()
-                self.fit_to_widget()
+                self.resize(2, 2)
         except Exception as err:
             self.console.append_text("ERROR: load_image_sequence: {}".format(err.args))
 

@@ -3,7 +3,7 @@ import sys
 
 import psutil
 import pyperclip
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
 
@@ -19,6 +19,7 @@ from playback_widget import PlaybackWidget
 from sprite_sheet_widget import SpriteSheetWidget
 from status_bar_widget import StatusBar
 from script_generator import ScriptGenerator
+from converter import DirectConverter
 
 
 # TODO: Make it so user can modify the order of the frames in the image sequence.
@@ -52,11 +53,11 @@ class MainWindow(QMainWindow):
         # Connect the custom signal to your desired function
         self.exit_signal.exit_signal.connect(self.exit_application)
 
-        # TODO: find a good way to auto set this value.
+        # Set the application version number
         self.version_number = "v1.0.4"
 
         # Set window title
-        self.image_sequence = None
+        self.image_sequence = []
         self.setWindowTitle("Super Sprite {}".format(self.version_number))
         self.resize(1200, 800)
 
@@ -79,17 +80,15 @@ class MainWindow(QMainWindow):
         console_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         console_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        # self.generator = ImageGenerator()
-        # self.generator.get
+        # Display the application information in the console before anything else.
+        self.main_console_widget.append_text("Super Sprite {}".format(self.version_number))
+        self.main_console_widget.append_text("")
 
         self.table = FileTableWidget(self.main_console_widget)
         table_dock_widget = QDockWidget("Table")
         table_dock_widget.setWidget(self.table)
         table_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         table_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
-
-        # Display the application information in the console before anything else.
-        self.main_console_widget.append_text("Super Sprite {}".format(self.version_number))
 
         # Define the controls, so we can add them to the other widgets
         self.control_widget = ControlWidget(self.main_console_widget)
@@ -127,27 +126,36 @@ class MainWindow(QMainWindow):
         playback_widget_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         self.import_export = ImportExporter(self.main_console_widget, self.control_widget)
+        self.direct_converter = DirectConverter(self.main_console_widget)
 
         # Setup the menu bar
         self.menu_bar = MenuBar(self.main_console_widget)
 
         # Connect the menu bar signal using instance for file menu
-        self.menu_bar.importimagesequence.connect(self.import_image_sequence)
-        self.menu_bar.exportimagesequence.connect(self.export_image_sequence)
-        self.menu_bar.exportspritesheet.connect(self.export_sprite_sheet)
-        self.menu_bar.importgiffile.connect(self.import_gif)
-        self.menu_bar.exportgiffile.connect(self.export_gif)
-        self.menu_bar.importmp4file.connect(self.import_mp4)
-        self.menu_bar.exportmp4file.connect(self.export_mp4)
-        self.menu_bar.exportwebmfile.connect(self.export_webm)
+        self.menu_bar.importimagesequence.connect(lambda: self.import_sequence("seq"))
+        self.menu_bar.exportimagesequence.connect(lambda: self.export_sequence("seq"))
+        self.menu_bar.exportspritesheet.connect(lambda: self.export_sequence("sprite"))
+        self.menu_bar.importgiffile.connect(lambda: self.import_sequence("gif"))
+        self.menu_bar.exportgiffile.connect(lambda: self.export_sequence("gif"))
+        self.menu_bar.importmp4file.connect(lambda: self.import_sequence("mp4"))
+        self.menu_bar.exportmp4file.connect(lambda: self.export_sequence("mp4"))
+        self.menu_bar.exportwebmfile.connect(lambda: self.export_sequence("web"))
         self.menu_bar.exitapp.connect(self.exit_application)
 
         # Connect the menu bar signal using instance for scripts menu
-        self.menu_bar.lsl_script_1.connect(self.provide_lsl_script_1)
-        self.menu_bar.lsl_script_2.connect(self.provide_lsl_script_2)
-        self.menu_bar.unity_script.connect(self.provide_unity_script)
-        self.menu_bar.godot_script.connect(self.provide_godot_script)
-        self.menu_bar.pygame_script.connect(self.provide_pygame_script)
+        self.menu_bar.lsl_script_1.connect(lambda: self.provide_script("LSL"))
+        self.menu_bar.lsl_script_2.connect(lambda: self.provide_script("LSL_Seq"))
+        self.menu_bar.unity_script.connect(lambda: self.provide_script("Unity"))
+        self.menu_bar.godot_script.connect(lambda: self.provide_script("Godot"))
+        self.menu_bar.pygame_script.connect(lambda: self.provide_script("PyGame"))
+
+        # Connect the menu bar signal for the converter menu
+        self.menu_bar.image_convert.connect(lambda: self.convert_type("image"))
+        self.menu_bar.seq_convert.connect(lambda: self.convert_type("seq"))
+        self.menu_bar.gif_convert.connect(lambda: self.convert_type("gif"))
+        self.menu_bar.mp4_convert.connect(lambda: self.convert_type("video"))
+        self.menu_bar.webm_convert.connect(lambda: self.convert_type("web"))
+        self.menu_bar.icon_convert.connect(lambda: self.convert_type("icon"))
 
         # Add the menu bar to the main window
         menu = self.menu_bar.create_menu_bar()
@@ -155,16 +163,16 @@ class MainWindow(QMainWindow):
 
         # Connect the controls here
         self.control_widget.fpsValueChanged.connect(self.playback_widget.set_fps_value)
-        self.control_widget.displayframeChanged.connect(self.playback_widget.set_frame_number)
-        self.control_widget.startframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
-        self.control_widget.endframeValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.display_frame_Changed.connect(self.playback_widget.set_frame_number)
+        self.control_widget.start_frame_Value_Changed.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.end_frame_Value_Changed.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.use_grid_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_grid_overlay)
         self.control_widget.use_index_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_index_overlay)
         self.control_widget.use_scale_checkbox.stateChanged.connect(self.sprite_sheet_widget.toggle_use_scale)
-        self.control_widget.gridrowValueChanged.connect(self.update_playback_display)
-        self.control_widget.gridcolumnValueChanged.connect(self.update_playback_display)
-        self.control_widget.imagewidthValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
-        self.control_widget.imageheightValueChanged.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.grid_row_Value_Changed.connect(self.update_playback_display)
+        self.control_widget.grid_column_Value_Changed.connect(self.update_playback_display)
+        self.control_widget.image_width_Value_Changed.connect(self.sprite_sheet_widget.update_sprite_sheet)
+        self.control_widget.image_height_Value_Changed.connect(self.sprite_sheet_widget.update_sprite_sheet)
         self.control_widget.playClicked.connect(self.playback_widget.start_playback)
         self.control_widget.stopClicked.connect(self.playback_widget.stop_playback)
         self.image_sequence_widget.imageClicked.connect(self.handle_image_clicked)
@@ -199,35 +207,7 @@ class MainWindow(QMainWindow):
         self.resize_timer.setSingleShot(True)
         self.resize_timer.timeout.connect(self.report_size)
 
-        self.main_console_widget.append_text("INFO: Finished loading all widgets.\n")
-
-    def provide_lsl_script_1(self) -> None:
-        """
-        Gets and sets the desired script and then exports it.
-        """
-        scripts = ScriptGenerator()
-        script = scripts.generate_lsl_script_option_1()
-        self.import_export.save_script("LSL", script)
-
-    def provide_lsl_script_2(self) -> None:
-        scripts = ScriptGenerator()
-        script = scripts.generate_lsl_script_option_2()
-        self.import_export.save_script("LSL_Seq", script)
-
-    def provide_unity_script(self) -> None:
-        scripts = ScriptGenerator()
-        script = scripts.generate_Unity_script()
-        self.import_export.save_script("Unity", script)
-
-    def provide_godot_script(self) -> None:
-        scripts = ScriptGenerator()
-        script = scripts.generate_godot_script()
-        self.import_export.save_script("Godot", script)
-
-    def provide_pygame_script(self) -> None:
-        scripts = ScriptGenerator()
-        script = scripts.generate_pygame_script()
-        self.import_export.save_script("PyGame", script)
+        self.main_console_widget.append_text("INFO: All Widgets Loaded Successfully.")
 
     def open_file_path(self, file_path) -> None:
         """
@@ -252,6 +232,12 @@ class MainWindow(QMainWindow):
         except Exception as err:
             self.main_console_widget.append_text(str(err.args))
 
+    def copy_to_clipboard(self, text_value: str) -> None:
+        """
+        Copies the provided string to the clipboard.
+        """
+        pyperclip.copy(text_value)
+
     def handle_image_clicked(self, image_path: str) -> None:
         """
         Handle the image click event.
@@ -266,12 +252,6 @@ class MainWindow(QMainWindow):
         except Exception as err:
             self.main_console_widget.append_text(str(err.args))
 
-    def copy_to_clipboard(self, text_value: str) -> None:
-        """
-        Copies the provided string to the clipboard.
-        """
-        pyperclip.copy(text_value)
-
     def handle_image_path_clicked(self, image_path: str) -> None:
         """
         Handles the click event for an image path.
@@ -279,12 +259,6 @@ class MainWindow(QMainWindow):
         Args:
             self: The instance of the class.
             image_path (str): The path of the image to be opened.
-
-        Returns:
-            None
-
-        Raises:
-            None
         """
         if image_path:
             try:
@@ -292,105 +266,110 @@ class MainWindow(QMainWindow):
             except Exception as err:
                 self.main_console_widget.append_text("ERROR: {}".format(err.args))
 
-    def import_image_sequence(self) -> None:
+    def import_sequence(self, file_type: str) -> None:
         """Imports an image sequence and populates the widgets.
 
         This method imports an image sequence using the ImportExporter class.
-        The widgets in the application are then populated with the images
-        contained in the selected directory.
-
-        Returns:
-            None
-
-        Raises:
-            <Specify any exceptions that can be raised>
-
-        """
-        # Implement the logic to import the image sequence here
-        # Populate the widgets with the images contained in the selected directory
-        self.image_sequence = []
-        self.image_sequence = self.import_export.import_image_sequence()
-        self.populate_image_sequence(self.image_sequence)
-
-    def export_image_sequence(self) -> None:
-        """
-        Exports the image sequence.
-        """
-        self.import_export.export_image_sequence(self.image_sequence)
-
-    def import_gif(self) -> None:
-        """
-        Imports an image sequence after converting a selected gif.
+        The widgets in the application are then populated with the images.
         """
         self.image_sequence = []
-        self.image_sequence = self.import_export.import_as_gif()
-        self.populate_image_sequence(self.image_sequence)
 
-    def export_gif(self) -> None:
-        """
-        Exports the image sequence as a .gif
-        """
-        self.import_export.export_as_gif(self.image_sequence)
+        if file_type == "seq":
+            self.image_sequence = self.import_export.import_image_sequence()
+        elif file_type == "mp4":
+            self.image_sequence = self.import_export.import_as_mp4()
+        elif file_type == "gif":
+            self.image_sequence = self.import_export.import_as_gif()
+        # elif file_type == "web":
+        # self.image_sequence = self.import_export.import_as_webm()
 
-    def export_webm(self) -> None:
-        """
-        Exports the image sequence as a .gif
-        """
-        self.import_export.export_as_webm(self.image_sequence)
+        # Populated list populate widgets.
+        if self.image_sequence:
+            self.populate_image_sequence(self.image_sequence)
 
-    def import_mp4(self) -> None:
-        """
-        Imports an image sequence after converting a selected mp4.
-        """
-        self.image_sequence = []
-        self.image_sequence = self.import_export.import_as_mp4()
-        self.populate_image_sequence(self.image_sequence)
+    def export_sequence(self, file_type: str) -> None:
+        """Exports the image sequence to a selected format."""
+        if file_type == "seq":
+            self.import_export.export_image_sequence(self.image_sequence)
+        elif file_type == "mp4":
+            self.import_export.export_as_mp4(self.image_sequence)
+        elif file_type == "gif":
+            self.import_export.export_as_gif(self.image_sequence)
+        elif file_type == "web":
+            self.import_export.export_as_webm(self.image_sequence)
+        elif file_type == "sprite":
+            sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()
+            self.import_export.export_sprite_sheet(sprite_sheet)
 
-    def export_mp4(self) -> None:
+    def convert_type(self, file_type: str) -> None:
         """
-        Exports the image sequence as a .mp4
+        Converts files from one type to another.
+        Args:
+            file_type (str): The file type to handle.
         """
-        self.import_export.export_as_mp4(self.image_sequence)
+        if file_type == "image":
+            self.direct_converter.convert_image()
+        elif file_type == "seq":
+            self.direct_converter.convert_sequence()
+        elif file_type == "video":
+            self.direct_converter.convert_video()
+        elif file_type == "gif":
+            self.direct_converter.convert_gif()
+        elif file_type == "web":
+            self.direct_converter.convert_web()
+        elif file_type == "icon":
+            self.direct_converter.convert_icon()
 
-    def populate_image_sequence(self, image_sequence) -> None:
+    def provide_script(self, script_type: str) -> None:
+        """
+        Provides the user with the selected script type.
+        Args:
+            script_type (str): The type of script to provide to the user.
+        """
+        scripts = ScriptGenerator()
+        if script_type == "LSL":
+            self.import_export.save_script(script_type, scripts.generate_lsl_script_option_1())
+        elif script_type == "LSL_Seq":
+            self.import_export.save_script(script_type, scripts.generate_lsl_script_option_2())
+        elif script_type == "Unity":
+            self.import_export.save_script(script_type, scripts.generate_Unity_script())
+        elif script_type == "Godot":
+            self.import_export.save_script(script_type, scripts.generate_godot_script())
+        elif script_type == "PyGame":
+            self.import_export.save_script(script_type, scripts.generate_pygame_script())
+
+    def populate_image_sequence(self, sequence) -> None:
         """
         Populates all the widgets with the image sequence.
 
         Args:
-            image_sequence: (list): The list containing the image sequence.
+            sequence: (list): The list containing the image sequence.
         """
         try:
-            if image_sequence:
-                self.statusBar.set_total_frame_text(str(len(image_sequence)))
+            if sequence:
+                self.statusBar.set_total_frame_text(str(len(sequence)))
 
                 self.main_console_widget.append_text("INFO: Image Sequence Loaded.")
 
-                self.image_sequence_widget.load_sequence(image_sequence)
+                self.image_sequence_widget.load_sequence(sequence)
                 self.main_console_widget.append_text("INFO: Image sequence set on Image Sequence Widget.")
 
-                self.image_viewer_widget.load_image(image_sequence, 0)
+                self.image_viewer_widget.load_image(sequence, 0)
                 self.main_console_widget.append_text("INFO: Image set on Image Viewer Widget")
 
-                self.playback_widget.load_image_sequence(image_sequence)
+                self.playback_widget.load_image_sequence(sequence)
                 self.main_console_widget.append_text("INFO: Image sequence set on Playback Widget.")
 
-                self.sprite_sheet_widget.load_images(image_sequence)
+                self.sprite_sheet_widget.load_images(sequence)
                 self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
             else:
                 self.main_console_widget.append_text("WARNING: populate_image_sequence: Nothing selected.")
         except Exception as err:
             self.main_console_widget.append_text("ERROR: populate_image_sequence: {}".format(err.args))
 
-    def export_sprite_sheet(self):
-        sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()
-        self.import_export.export_sprite_sheet(sprite_sheet)
-
     def get_memory_usage(self) -> None:
         """
         Retrieves the current memory usage of the process and displays it in a human-readable format.
-
-        Returns:
-            None
 
         Raises:
             Exception: If an error occurs while retrieving or displaying the memory usage.
@@ -425,16 +404,8 @@ class MainWindow(QMainWindow):
     def report_size(self) -> None:
         """
         Report the current size of the main window.
-
         After the window has been resized, this function fits the images to the new widget size.
-
         """
-        # Get the new size of the main window
-        # new_size = self.size()
-        # print(f"New size: {new_size.width()} x {new_size.height()}")
-
-        # After the window has been resized, fit the images to the new widget size.
-        # TODO: Also make it so that the undocked widgets trigger this function when scaled.
         self.sprite_sheet_widget.fit_to_widget()
         self.image_viewer_widget.fit_to_widget()
         self.playback_widget.fit_to_widget()
@@ -442,9 +413,7 @@ class MainWindow(QMainWindow):
     def exit_application(self) -> None:
         """
         Exit the application gracefully.
-
         This method is called when the application is exiting.
-
         """
         self.import_export.clean_up_temp_directory()
         self.close()

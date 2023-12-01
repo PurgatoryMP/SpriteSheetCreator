@@ -85,7 +85,7 @@ class MenuBar(QMenuBar):
 
         # Add the console widget.
         self.console = main_console_widget
-        self.console.append_text("INFO: Loading Menu Bar Widget.----------------")
+        self.console.append_text("INFO: Menu Bar Loaded.")
 
         self.create_menu_bar()
 

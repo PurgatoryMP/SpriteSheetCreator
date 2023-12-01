@@ -19,7 +19,6 @@ class ImageViewerWidget(QWidget):
         super().__init__()
 
         self.console = main_console_widget
-        self.console.append_text("INFO: Loading Image Viewer Widget.----------------")
 
         self.setMouseTracking(True)
         self.scroll_pos = None
@@ -66,7 +65,7 @@ class ImageViewerWidget(QWidget):
 
         # Call the method to update the display name label with an empty file name
         self.set_display_name_label("")
-        self.console.append_text("INFO: Finished Loading Image Viewer Widget.")
+        self.console.append_text("INFO: Image Viewer Widget Loaded.")
 
     def load_image(self, image_sequence: list, frame_index: int) -> None:
         """Load and display an image from an image sequence.

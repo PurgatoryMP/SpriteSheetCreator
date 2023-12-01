@@ -5,18 +5,15 @@ import style_sheet
 
 
 class ConsoleWidget(QWidget):
+    """
+    Display's information and errors to the user.
+    """
+
     def __init__(self):
         """
         Initialize the ConsoleWidget.
         """
         super().__init__()
-
-        self.init_ui()
-
-    def init_ui(self):
-        """
-        Initialize the user interface of the ConsoleWidget.
-        """
         layout = QVBoxLayout()
 
         # Create a QScrollArea widget
