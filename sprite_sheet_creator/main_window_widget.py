@@ -3,23 +3,23 @@ import sys
 
 import psutil
 import pyperclip
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
 
 import style_sheet
 from console_widget import ConsoleWidget
 from controls_widget import ControlWidget
+from converter import DirectConverter
 from higherarchy_widget import FileTableWidget
 from image_grid_widget import ImageSequenceWidget
 from image_viewer_widget import ImageViewerWidget
 from importer import ImportExporter
 from menu_bar_widget import MenuBar
 from playback_widget import PlaybackWidget
+from script_generator import ScriptGenerator
 from sprite_sheet_widget import SpriteSheetWidget
 from status_bar_widget import StatusBar
-from script_generator import ScriptGenerator
-from converter import DirectConverter
 
 
 # TODO: Make it so user can modify the order of the frames in the image sequence.
@@ -90,7 +90,7 @@ class MainWindow(QMainWindow):
         table_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         table_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        # Define the controls, so we can add them to the other widgets
+        # Define the controls and set a minimum and maximum scale for the tool widget.
         self.control_widget = ControlWidget(self.main_console_widget)
         control_dock_widget = QDockWidget("Controls")
         control_dock_widget.setWidget(self.control_widget)
@@ -125,10 +125,11 @@ class MainWindow(QMainWindow):
         playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         playback_widget_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
+        # Add the import/export and converter functions
         self.import_export = ImportExporter(self.main_console_widget, self.control_widget)
         self.direct_converter = DirectConverter(self.main_console_widget)
 
-        # Setup the menu bar
+        # Set up the menu bar
         self.menu_bar = MenuBar(self.main_console_widget)
 
         # Connect the menu bar signal using instance for file menu
@@ -217,10 +218,13 @@ class MainWindow(QMainWindow):
             file_path (str): The path of the file to open.
 
         """
-        if file_path:
-            directory = os.path.dirname(file_path)
-            if directory:
-                os.startfile(directory)
+        try:
+            if file_path:
+                directory = os.path.dirname(file_path)
+                if directory:
+                    os.startfile(directory)
+        except Exception as err:
+            self.main_console_widget.append_text("ERROR: open_file_path: {}".format(err.args))
 
     def update_playback_display(self) -> None:
         """
@@ -230,7 +234,7 @@ class MainWindow(QMainWindow):
             self.sprite_sheet_widget.update_sprite_sheet()
             self.playback_widget.display_playtime()
         except Exception as err:
-            self.main_console_widget.append_text(str(err.args))
+            self.main_console_widget.append_text("ERROR: update_playback_display: {}".format(err.args))
 
     def copy_to_clipboard(self, text_value: str) -> None:
         """
@@ -250,7 +254,7 @@ class MainWindow(QMainWindow):
             if image_path:
                 self.image_viewer_widget.set_select_image(image_path)
         except Exception as err:
-            self.main_console_widget.append_text(str(err.args))
+            self.main_console_widget.append_text("ERROR: handle_image_clicked: {}".format(err.args))
 
     def handle_image_path_clicked(self, image_path: str) -> None:
         """
@@ -264,7 +268,7 @@ class MainWindow(QMainWindow):
             try:
                 os.startfile(image_path)
             except Exception as err:
-                self.main_console_widget.append_text("ERROR: {}".format(err.args))
+                self.main_console_widget.append_text("ERROR: handle_image_path_clicked: {}".format(err.args))
 
     def import_sequence(self, file_type: str) -> None:
         """Imports an image sequence and populates the widgets.
@@ -390,7 +394,7 @@ class MainWindow(QMainWindow):
             # Display memory usage
             self.statusBar.set_mem_usage_text(str(memory_usage_readable))
         except Exception as err:
-            self.main_console_widget.append_text(str(err.args))
+            self.main_console_widget.append_text("ERROR: get_memory_usage: {}".format(err.args))
 
     def resizeEvent(self, event) -> None:
         """
