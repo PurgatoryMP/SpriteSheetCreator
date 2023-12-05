@@ -70,7 +70,7 @@ class PlaybackWidget(QWidget):
             self.view = QGraphicsView(self)
             self.scene = QGraphicsScene(self)
             self.view.setScene(self.scene)
-            self.view.setStyleSheet(style_sheet.graphics_scene_style())
+            self.view.setStyleSheet(style_sheet.graphics_View_style())
             layout.addWidget(self.view)
 
             scroll_area = QScrollArea(self)

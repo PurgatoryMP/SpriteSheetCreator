@@ -3,7 +3,7 @@ import sys
 
 import psutil
 import pyperclip
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject, QThread
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QDockWidget
 
@@ -22,6 +22,8 @@ from sprite_sheet_widget import SpriteSheetWidget
 from status_bar_widget import StatusBar
 
 
+
+
 # TODO: Make it so user can modify the order of the frames in the image sequence.
 # TODO: Make it so the user can inject or append a frame or sequence into the existing sequence.
 # TODO: Add a new layer option so users can create layered sequences.
@@ -30,7 +32,6 @@ from status_bar_widget import StatusBar
 # Custom class to define a signal
 class ExitSignal(QObject):
     exit_signal = pyqtSignal()
-
 
 class MainWindow(QMainWindow):
     """The main window of the application."""
@@ -75,55 +76,55 @@ class MainWindow(QMainWindow):
 
         # Define the console first so we can print out messages to it while loading other widgets.
         self.main_console_widget = ConsoleWidget()
-        console_dock_widget = QDockWidget("Console")
-        console_dock_widget.setWidget(self.main_console_widget)
-        console_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        console_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.console_dock_widget = QDockWidget("Console")
+        self.console_dock_widget.setWidget(self.main_console_widget)
+        self.console_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        self.console_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         # Display the application information in the console before anything else.
         self.main_console_widget.append_text("Super Sprite {}".format(self.version_number))
         self.main_console_widget.append_text("")
 
         self.table = FileTableWidget(self.main_console_widget)
-        table_dock_widget = QDockWidget("Table")
-        table_dock_widget.setWidget(self.table)
-        table_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        table_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.table_dock_widget = QDockWidget("Table")
+        self.table_dock_widget.setWidget(self.table)
+        self.table_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        self.table_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         # Define the controls and set a minimum and maximum scale for the tool widget.
         self.control_widget = ControlWidget(self.main_console_widget)
-        control_dock_widget = QDockWidget("Controls")
-        control_dock_widget.setWidget(self.control_widget)
-        control_dock_widget.setMinimumWidth(250)
-        control_dock_widget.setMaximumWidth(300)
-        control_dock_widget.setMaximumHeight(600)
-        control_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        control_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.control_dock_widget = QDockWidget("Controls")
+        self.control_dock_widget.setWidget(self.control_widget)
+        self.control_dock_widget.setMinimumWidth(250)
+        self.control_dock_widget.setMaximumWidth(300)
+        self.control_dock_widget.setMaximumHeight(600)
+        self.control_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        self.control_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         self.image_sequence_widget = ImageSequenceWidget(self.table, self.control_widget, self.main_console_widget)
-        image_sequence_dock_widget = QDockWidget("Image Sequence")
-        image_sequence_dock_widget.setWidget(self.image_sequence_widget)
-        image_sequence_dock_widget.setMaximumHeight(300)
-        image_sequence_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        image_sequence_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.image_sequence_dock_widget = QDockWidget("Image Sequence")
+        self.image_sequence_dock_widget.setWidget(self.image_sequence_widget)
+        self.image_sequence_dock_widget.setMaximumHeight(300)
+        self.image_sequence_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        self.image_sequence_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         self.image_viewer_widget = ImageViewerWidget(self.main_console_widget)
-        image_viewer_dock_widget = QDockWidget("Image Viewer")
-        image_viewer_dock_widget.setWidget(self.image_viewer_widget)
-        image_viewer_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        image_viewer_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.image_viewer_dock_widget = QDockWidget("Image Viewer")
+        self.image_viewer_dock_widget.setWidget(self.image_viewer_widget)
+        self.image_viewer_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        self.image_viewer_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         self.sprite_sheet_widget = SpriteSheetWidget(self.main_console_widget, self.control_widget)
-        sprite_sheet_dock_widget = QDockWidget("Sprite Sheet")
-        sprite_sheet_dock_widget.setWidget(self.sprite_sheet_widget)
-        sprite_sheet_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        sprite_sheet_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.sprite_sheet_dock_widget = QDockWidget("Sprite Sheet")
+        self.sprite_sheet_dock_widget.setWidget(self.sprite_sheet_widget)
+        self.sprite_sheet_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        self.sprite_sheet_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         self.playback_widget = PlaybackWidget(self.main_console_widget, self.control_widget, self.statusBar)
-        playback_widget_dock_widget = QDockWidget("Playback")
-        playback_widget_dock_widget.setWidget(self.playback_widget)
-        playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
-        playback_widget_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
+        self.playback_widget_dock_widget = QDockWidget("Playback")
+        self.playback_widget_dock_widget.setWidget(self.playback_widget)
+        self.playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        self.playback_widget_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         # Add the import/export and converter functions
         self.import_export = ImportExporter(self.main_console_widget, self.control_widget)
@@ -181,21 +182,21 @@ class MainWindow(QMainWindow):
         self.image_viewer_widget.imagepathClicked.connect(self.open_file_path)
 
         # add the widgets to the main window.
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, image_sequence_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, playback_widget_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, image_viewer_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, control_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, sprite_sheet_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, console_dock_widget)
-        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, table_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_sequence_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.playback_widget_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.image_viewer_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.control_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.sprite_sheet_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.console_dock_widget)
+        self.addDockWidget(Qt.DockWidgetArea.BottomDockWidgetArea, self.table_dock_widget)
 
         # Hide the table and console by default
-        console_dock_widget.setVisible(False)
-        table_dock_widget.setVisible(False)
+        self.console_dock_widget.setVisible(False)
+        self.table_dock_widget.setVisible(False)
 
         # Set which widgets we want to start out as floating free of the main window
-        console_dock_widget.setFloating(True)
-        table_dock_widget.setFloating(True)
+        self.console_dock_widget.setFloating(True)
+        self.table_dock_widget.setFloating(True)
 
         # Add a timer to control the playback.
         self.timer = QTimer(self)

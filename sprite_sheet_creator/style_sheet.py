@@ -31,11 +31,13 @@ def get_style():
         "Non_Selected_Color": "#434D4F",
         "Viewer_Background_color": "#262626",
         "Unfocused_Console_Background_Color": "#434D4F",
+        "Hover_Console_Background_Color": "#4F5B5D",
         "Focused_Console_Background_Color": "#495456",
         "Border_size_color": "1px solid Black",
         "Border_hover_size_color": "1px solid gold",
         "Horizontal_Scrollbar_Color": "#bf7575",
         "Vertical_Scrollbar_Color": "#94bf75",
+        "Font_Family": "Arial, sans-serif",
         "Font_Size": "14px",
         "Font_Color": "#e8e8e8",
         "Hover_Font_Color": "#fcfcfa",
@@ -258,7 +260,7 @@ def scroll_bar_style():
     """ % get_style()
     return style_sheet
 
-def graphics_scene_style():
+def graphics_View_style():
     # checker_image = image_generator.create_checker_pattern(16, 16, 8)
     # f'background-image: url("{checker_image}"); border: 1px solid black;'
 
@@ -499,15 +501,15 @@ def console_style():
     style_sheet = """
         QTextEdit {
             background-color: %(Unfocused_Console_Background_Color)s; /* Background color */
-            color: #White; /* Text color */
-            font-family: Arial, sans-serif; /* Font family */
+            color: %(Font_Color)s;
+            font-family: %(Font_Family)s;
             font-size: %(Font_Size)s;
             border: %(Border_size_color)s;
             padding: %(padding_size)s;
         }
         
         QTextEdit:hover {
-            background-color: #4F5B5D;
+            background-color: %(Hover_Console_Background_Color)s;
             border: %(Border_hover_size_color)s;
         }
         
@@ -524,7 +526,7 @@ def status_bar_style():
         QStatusBar {
             background-color: #545454;
             color: %(Font_Color)s;
-            font-family: Arial;
+            font-family: %(Font_Family)s;
             font-size: %(Font_Size)s;
             border: %(Border_size_color)s;
             border-radius: %(Border_Radius)s;

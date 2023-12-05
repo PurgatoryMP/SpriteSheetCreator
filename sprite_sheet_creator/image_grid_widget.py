@@ -24,9 +24,10 @@ class ImageSequenceWidget(QWidget):
         self.table = table_widget
 
         self.console = main_console_widget
+        self.controls = control_widget
 
-        self.start_frame = control_widget.get_start_frame_value()
-        self.end_frame = control_widget.get_end_frame_value()
+        self.start_frame = self.controls.get_start_frame_value()
+        self.end_frame = self.controls.get_end_frame_value()
 
         self.image_sequence = []
 
@@ -141,3 +142,5 @@ class ImageSequenceWidget(QWidget):
         """
         if event.button() == Qt.LeftButton:
             self.imageClicked.emit(image_path)
+
+    

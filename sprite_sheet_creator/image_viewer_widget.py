@@ -36,7 +36,7 @@ class ImageViewerWidget(QWidget):
         self.scroll_area.setWidgetResizable(True)
 
         self.view = QGraphicsView()
-        self.view.setStyleSheet(style_sheet.graphics_scene_style())
+        self.view.setStyleSheet(style_sheet.graphics_View_style())
         self.view.setRenderHint(QPainter.Antialiasing)
         self.view.setRenderHint(QPainter.SmoothPixmapTransform)
         self.view.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)

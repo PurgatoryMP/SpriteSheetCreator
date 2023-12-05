@@ -138,15 +138,16 @@ class ControlWidget(QWidget):
             "Enabled: Use the source image scale for each cell.\n"
             "Disabled: Down scale each frame to fit the defined image scale.")
 
-        self.console.append_text("INFO: Control Settings:-------------")
-        self.console.append_text("INFO: FPS = {}".format(self.fps_input.value()))
-        self.console.append_text("INFO: Grid Rows = {}".format(self.grid_rows_input.value()))
-        self.console.append_text("INFO: Grid Columns = {}".format(self.grid_columns_input.value()))
-        self.console.append_text("INFO: Grid Overlay = {}".format(self.use_grid_checkbox.isChecked()))
-        self.console.append_text("INFO: Index Overlay = {}".format(self.use_index_checkbox.isChecked()))
-        self.console.append_text("INFO: Use Original Scale = {}".format(self.use_scale_checkbox.isChecked()))
-        self.console.append_text("INFO: sprite sheet width = {}".format(self.image_width_input.value()))
-        self.console.append_text("INFO: sprite sheet height = {}".format(self.image_height_input.value()))
+        # Display settings in console.
+        # self.console.append_text("INFO: Control Settings:-------------")
+        # self.console.append_text("INFO: FPS = {}".format(self.fps_input.value()))
+        # self.console.append_text("INFO: Grid Rows = {}".format(self.grid_rows_input.value()))
+        # self.console.append_text("INFO: Grid Columns = {}".format(self.grid_columns_input.value()))
+        # self.console.append_text("INFO: Grid Overlay = {}".format(self.use_grid_checkbox.isChecked()))
+        # self.console.append_text("INFO: Index Overlay = {}".format(self.use_index_checkbox.isChecked()))
+        # self.console.append_text("INFO: Use Original Scale = {}".format(self.use_scale_checkbox.isChecked()))
+        # self.console.append_text("INFO: sprite sheet width = {}".format(self.image_width_input.value()))
+        # self.console.append_text("INFO: sprite sheet height = {}".format(self.image_height_input.value()))
 
         self.separator1 = QLabel("Playback:")
         self.separator1.setStyleSheet(style_sheet.seperator_label_style())

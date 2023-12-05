@@ -62,6 +62,10 @@ class MenuBar(QMenuBar):
         """
         super().__init__()
 
+        self.convert_menu = None
+        self.script_menu = None
+        self.file_menu = None
+        self.menubar = None
         self.icon_convert_action = None
         self.image_convert_action = None
         self.webm_convert_action = None
@@ -85,50 +89,51 @@ class MenuBar(QMenuBar):
 
         # Add the console widget.
         self.console = main_console_widget
-        self.console.append_text("INFO: Menu Bar Loaded.")
 
         self.create_menu_bar()
+
+        self.console.append_text("INFO: Menu Bar Widget Loaded.")
 
     def create_menu_bar(self):
         """
         Create the menu bar with all the actions.
 
         Returns:
-            menubar: The created QMenuBar.
+            self.menubar: The created QMenuBar.
         """
         # Create the menu bar.
-        menubar = QMenuBar()
+        self.menubar = QMenuBar()
 
         # Create the menu bar options.
-        file_menu = menubar.addMenu("File")
-        script_menu = menubar.addMenu("Scripts")
-        convert_menu = menubar.addMenu("Converters")
+        self.file_menu = self.menubar.addMenu("File")
+        self.script_menu = self.menubar.addMenu("Scripts")
+        # self.convert_menu = self.menubar.addMenu("Converters")
 
         # Create the file menu items.
-        self.import_image_sequence_action = QAction("Import Image Sequence", menubar)
-        self.export_image_sequence_action = QAction("Export Image Sequence", menubar)
-        self.export_sprite_sheet_action = QAction("Export Sprite Sheet", menubar)
-        self.import_gif_file_action = QAction("Import Gif File", menubar)
-        self.export_gif_file_action = QAction("Export Gif File", menubar)
-        self.export_webm_file_action = QAction("Export Webm File", menubar)
-        self.import_mp4_file_action = QAction("Import MP4 File", menubar)
-        self.export_mp4_file_action = QAction("Export MP4 File", menubar)
-        self.exit_action = QAction("Exit", menubar)
+        self.import_image_sequence_action = QAction("Import Image Sequence", self.menubar)
+        self.export_image_sequence_action = QAction("Export Image Sequence", self.menubar)
+        self.export_sprite_sheet_action = QAction("Export Sprite Sheet", self.menubar)
+        self.import_gif_file_action = QAction("Import Gif File", self.menubar)
+        self.export_gif_file_action = QAction("Export Gif File", self.menubar)
+        self.export_webm_file_action = QAction("Export Webm File", self.menubar)
+        self.import_mp4_file_action = QAction("Import MP4 File", self.menubar)
+        self.export_mp4_file_action = QAction("Export MP4 File", self.menubar)
+        self.exit_action = QAction("Exit", self.menubar)
 
         # Create the script menu items.
-        self.lsl_script_1_action = QAction("Save Single LSL Script", menubar)
-        self.lsl_script_2_action = QAction("Save Seq. LSL Script", menubar)
-        self.unity_script_action = QAction("Save Unity C# Script", menubar)
-        self.godot_script_action = QAction("Save Godot GDScript", menubar)
-        self.pygame_script_action = QAction("Save PyGame PyScript", menubar)
+        self.lsl_script_1_action = QAction("Save Single LSL Script", self.menubar)
+        self.lsl_script_2_action = QAction("Save Seq. LSL Script", self.menubar)
+        self.unity_script_action = QAction("Save Unity C# Script", self.menubar)
+        self.godot_script_action = QAction("Save Godot GDScript", self.menubar)
+        self.pygame_script_action = QAction("Save PyGame PyScript", self.menubar)
 
         # Create the script menu items.
-        self.image_convert_action = QAction("Convert to Image Type", menubar)
-        self.seq_convert_action = QAction("Convert to Image Sequence", menubar)
-        self.gif_convert_action = QAction("Convert to Gif", menubar)
-        self.mp4_convert_action = QAction("Convert to Video", menubar)
-        self.webm_convert_action = QAction("Convert to Web", menubar)
-        self.icon_convert_action = QAction("Convert to Icon", menubar)
+        self.image_convert_action = QAction("Convert to Image Type", self.menubar)
+        self.seq_convert_action = QAction("Convert to Image Sequence", self.menubar)
+        self.gif_convert_action = QAction("Convert to Gif", self.menubar)
+        self.mp4_convert_action = QAction("Convert to Video", self.menubar)
+        self.webm_convert_action = QAction("Convert to Web", self.menubar)
+        self.icon_convert_action = QAction("Convert to Icon", self.menubar)
 
         # Connect to a separate method.
         self.import_image_sequence_action.triggered.connect(self.emit_import_image_sequence)
@@ -157,44 +162,42 @@ class MenuBar(QMenuBar):
         self.icon_convert_action.triggered.connect(self.emit_icon_convert)
 
         # Add the actions to the menu
-        file_menu.addAction(self.import_image_sequence_action)
-        file_menu.addAction(self.export_image_sequence_action)
-        file_menu.addSeparator()
-        file_menu.addAction(self.export_sprite_sheet_action)
-        file_menu.addSeparator()
-        file_menu.addAction(self.import_gif_file_action)
-        file_menu.addAction(self.export_gif_file_action)
-        file_menu.addSeparator()
-        file_menu.addAction(self.import_mp4_file_action)
-        file_menu.addAction(self.export_mp4_file_action)
-        file_menu.addSeparator()
-        file_menu.addAction(self.export_webm_file_action)
-        file_menu.addSeparator()
-        file_menu.addAction(self.exit_action)
+        self.file_menu.addAction(self.import_image_sequence_action)
+        self.file_menu.addAction(self.export_image_sequence_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.export_sprite_sheet_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.import_gif_file_action)
+        self.file_menu.addAction(self.export_gif_file_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.import_mp4_file_action)
+        self.file_menu.addAction(self.export_mp4_file_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.export_webm_file_action)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(self.exit_action)
 
         # Add the script actions to the menu
-        script_menu.addAction(self.lsl_script_1_action)
-        script_menu.addAction(self.lsl_script_2_action)
-        script_menu.addAction(self.unity_script_action)
-        script_menu.addAction(self.godot_script_action)
-        script_menu.addAction(self.pygame_script_action)
+        self.script_menu.addAction(self.lsl_script_1_action)
+        self.script_menu.addAction(self.lsl_script_2_action)
+        self.script_menu.addAction(self.unity_script_action)
+        self.script_menu.addAction(self.godot_script_action)
+        self.script_menu.addAction(self.pygame_script_action)
 
         # Add the convert actions to the menu
-        convert_menu.addAction(self.image_convert_action)
-        convert_menu.addAction(self.seq_convert_action)
-        convert_menu.addAction(self.gif_convert_action)
-        convert_menu.addAction(self.mp4_convert_action)
-        convert_menu.addAction(self.webm_convert_action)
-        convert_menu.addAction(self.icon_convert_action)
+        # self.convert_menu.addAction(self.image_convert_action)
+        # self.convert_menu.addAction(self.seq_convert_action)
+        # self.convert_menu.addAction(self.gif_convert_action)
+        # self.convert_menu.addAction(self.mp4_convert_action)
+        # self.convert_menu.addAction(self.webm_convert_action)
+        # self.convert_menu.addAction(self.icon_convert_action)
 
         # Apply the style settings to each of the menus
-        file_menu.setStyleSheet(style_sheet.menu_bar_style())
-        script_menu.setStyleSheet(style_sheet.menu_bar_style())
-        convert_menu.setStyleSheet(style_sheet.menu_bar_style())
+        self.file_menu.setStyleSheet(style_sheet.menu_bar_style())
+        self.script_menu.setStyleSheet(style_sheet.menu_bar_style())
+        # self.convert_menu.setStyleSheet(style_sheet.menu_bar_style())
 
-        self.console.append_text("INFO: Finished Loading Menu Bar Widget.")
-
-        return menubar
+        return self.menubar
 
     def emit_icon_convert(self) -> None:
         """

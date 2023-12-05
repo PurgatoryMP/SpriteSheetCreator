@@ -1,8 +1,8 @@
-name = "sprite_sheet_creator"
+name = "Super Sprite"
 
-version = "1.0.0"
+version = "1.0.4"
 
-description = "This tool is for creating sprite sheets from image sequences."
+description = "This tool is for creating sprite sheets."
 
 authors = [
     "DantiaGothly",

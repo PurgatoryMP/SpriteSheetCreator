@@ -43,9 +43,11 @@ class SpriteSheetWidget(QWidget):
 
         # Create the QGraphicsView and QGraphicsScene
         self.view = QGraphicsView()
-        self.view.setStyleSheet(style_sheet.graphics_scene_style())
+        self.view.setStyleSheet(style_sheet.graphics_View_style())
         self.view.setDragMode(QGraphicsView.ScrollHandDrag)
+
         self.scene = QGraphicsScene()
+
         self.view.setScene(self.scene)
 
         # Create the scroll area
@@ -159,7 +161,7 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: calculate_rows_columns: {}".format(err.args))
 
-    def calculate_grid_size(self, file_paths, grid_rows, grid_columns):
+    def calculate_grid_size(self, file_paths, grid_rows, grid_columns) -> tuple:
         """
         Calculates the size of a grid.
 
@@ -185,7 +187,10 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: calculate_grid_size: {}".format(err.args))
 
-    def toggle_grid_overlay(self):
+    def toggle_grid_overlay(self) -> None:
+        """
+        Toggles the grid overlay on/off
+        """
         try:
             if self.grid_overlay:
                 self.grid_overlay = False
@@ -198,7 +203,10 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: toggle_grid_overlay: {}".format(err.args))
 
-    def toggle_index_overlay(self):
+    def toggle_index_overlay(self) -> None:
+        """
+        Toggles the frame index overlay on/off
+        """
         try:
             if self.index_overlay:
                 self.index_overlay = False
@@ -211,7 +219,10 @@ class SpriteSheetWidget(QWidget):
         except Exception as err:
             self.console.append_text("ERROR: toggle_index_overlay: {}".format(err.args))
 
-    def toggle_use_scale(self):
+    def toggle_use_scale(self) -> None:
+        """
+        Toggles the option to use the original image scale setting on/off
+        """
         try:
             if self.use_scale:
                 self.use_scale = False
@@ -256,7 +267,8 @@ class SpriteSheetWidget(QWidget):
 
             # Update the label showing the current image dimensions.
             self.label.clear()
-            self.label.setText("Sprite Sheet Scale: {}x{}, Cell Scale: {}x{}".format(sprite_sheet_width, sprite_sheet_height, target_width, target_height))
+            self.label.setText("Sprite Sheet Scale: {}x{}, Cell Scale: {}x{}".format(
+                sprite_sheet_width, sprite_sheet_height, target_width, target_height))
 
             # Connect the clicked signal of the label to the slot function
             self.label.mousePressEvent = lambda event, value=self.label.text(): self.handle_label_click(event, value)
@@ -342,7 +354,7 @@ class SpriteSheetWidget(QWidget):
             sprite_sheet_with_outline_painter.drawPixmap(0, 0, label_layer)
             sprite_sheet_with_outline_painter.end()
 
-            # TODO: Add Masking layer sequence option.
+            # TODO: Add Masking sequence layer option.
 
             # return sprite_sheet
             return sprite_sheet_with_outline
@@ -458,7 +470,7 @@ class SpriteSheetWidget(QWidget):
         """
         self.fit_to_widget()
 
-    def handle_label_click(self, event, text_value:str):
+    def handle_label_click(self, event, text_value: str) -> None:
         """
         Handle the click event on an image.
 
