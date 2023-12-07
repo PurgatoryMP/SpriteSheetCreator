@@ -10,11 +10,14 @@ class DirectConverter:
     #  that type of content, the idea being that the user can convert a sequence to a video directly or a gif or a webm
     #  and vise versa.
 
-    def __init__(self, main_console_widget):
+    def __init__(self, main_console_widget, control_widget, statusbar_widget):
         super().__init__()
 
         # Add the console widget.
         self.console = main_console_widget
+        self.control = control_widget
+        self.statusbar = statusbar_widget
+
         self.console.append_text("INFO: Converter Loaded.")
 
     def convert_image(self):

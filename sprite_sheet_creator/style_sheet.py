@@ -18,6 +18,8 @@ def get_style():
         "Main_Window_Background_Color": "#303030",
         "Dock_Widget_Background_color": "#3D3D3D",
         "Dock_Title_Background_Color": "#484A4F",
+        "ProgressBar_Background_Color": "#303030",
+        "ProgressBar_Loading_Color": "#42f572",
         "Border_Radius": "5px",
         "Separator_Color": "#161616",
         "Selected_Color": "#4772B3",
@@ -257,6 +259,19 @@ def scroll_bar_style():
         min-width: 20px;
         border-radius: %(Border_Radius)s;
     }
+    """ % get_style()
+    return style_sheet
+
+def progress_bar_style():
+    style_sheet = """
+    QProgressBar {
+        background-color: %(ProgressBar_Background_Color)s;
+        text-visible: false;
+        width: 50px;
+        }
+    QProgressBar::chunk {
+        background-color: %(ProgressBar_Loading_Color)s;
+    }    
     """ % get_style()
     return style_sheet
 

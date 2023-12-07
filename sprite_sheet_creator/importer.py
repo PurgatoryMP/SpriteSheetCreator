@@ -13,10 +13,10 @@ from moviepy.video.io.VideoFileClip import VideoFileClip
 
 class ImportExporter:
 
-    def __init__(self, main_console_widget, control_widget):
+    def __init__(self, main_console_widget, control_widget, statusbar_widget):
         self.path = None
         self.console = main_console_widget
-
+        self.statusbar = statusbar_widget
         self.control = control_widget
 
         self.image_sequence = []
@@ -43,12 +43,14 @@ class ImportExporter:
         Imports an image sequence from a selected directory.
         """
         try:
+            self.statusbar.set_progress_maximum(100)
             # Open file dialog to select directory
             directory = QFileDialog.getExistingDirectory(caption="Select Sequence Directory.")
             if directory:
                 # Retrieve image files from the selected directory and sort them by creation time.
                 # This keeps the frames in the correct order regardless of name.
                 self.image_sequence = sorted([str(os.path.join(directory, filename)).replace("\\", "/") for filename in os.listdir(directory)], key=os.path.getctime)
+                self.statusbar.update_progressbar(75)
                 return self.image_sequence
         except Exception as err:
             self.console.append_text("ERROR: import_image_sequence: {}".format(err.args))
@@ -66,9 +68,11 @@ class ImportExporter:
                     if start <= 0:
                         start = 0
                     end = self.control.get_end_frame_value()
+                    self.statusbar.set_progress_maximum(end)
 
                     for index, image_filepath in enumerate(image_sequence[start:end]):
                         destination_filepath = os.path.join(sequence_directory, os.path.basename(image_filepath))
+                        self.statusbar.update_progressbar(index)
 
                         try:
                             shutil.copy(image_filepath, destination_filepath)
@@ -101,6 +105,7 @@ class ImportExporter:
                 # Calculate the frame range and frames per second (fps)
                 frame_range = self.control.get_end_frame_value() - self.control.get_start_frame_value()
 
+                # get the fps value
                 fps = self.control.get_fps_value()
 
                 # Generate the filename based on the parameters
@@ -115,6 +120,8 @@ class ImportExporter:
                     # open a popup dialog with a button the user can click to open the output directory in the file explorer.
                     self.path = os.path.dirname(file_path)
                     os.startfile(self.path)
+
+                self.statusbar.update_progressbar(50)
 
         except Exception as err:
             self.console.append_text("ERROR: export_sprite_sheet: {}".format(err.args))
@@ -132,6 +139,8 @@ class ImportExporter:
             gif_reader.setDecideFormatFromContent(True)
             frame_count = gif_reader.imageCount()
 
+            self.statusbar.set_progress_maximum(frame_count)
+
             # Create the output directory if it doesn't exist
             output_dir = "{}/{}".format(self.temp_directory, "converted")
 
@@ -144,6 +153,7 @@ class ImportExporter:
 
             # Iterate over each frame of the GIF and save as separate images
             for frame_index in range(frame_count):
+                self.statusbar.update_progressbar(frame_index)
                 gif_reader.jumpToImage(frame_index)
                 image = gif_reader.read()
 
@@ -169,9 +179,16 @@ class ImportExporter:
             image_sequence: (list): A collection of file paths to the frames of the image sequence.
         """
         try:
+            filename = f"GifName_000.gif"
             start_frame = self.control.get_start_frame_value()
             end_frame = self.control.get_end_frame_value()
-            filename = f"GifName_000.gif"
+            fps = self.control.get_fps_value()
+
+            # Convert the fps to a duration value and trim the length.
+            duration = round(1/fps, 3)
+
+            # update the progress bar max value
+            self.statusbar.set_progress_maximum(end_frame)
 
             # The image sequence
             sequence = image_sequence[start_frame:end_frame]
@@ -184,21 +201,28 @@ class ImportExporter:
 
             if save_path and sequence:
                 images = []
+                index = 0
                 for file_path in sequence:
+                    index += 1
                     if os.path.exists(file_path):
+                        self.statusbar.update_progressbar(index)
                         image = Image.open(file_path)
                         images.append(image)
 
                 if images:
-                    images[0].save(save_path,
-                                   format='GIF',
-                                   save_all=True,
-                                   append_images=images[1:],
-                                   #duration=10,  # Set the duration between frames (in milliseconds)
-                                   fps=self.control.get_fps_value(),
-                                   loop=0,
-                                   disposal=2,
-                                   background=255)
+                    images[0].save(
+                        save_path,
+                        format='GIF',
+                        version='GIF89a',
+                        save_all=True,
+                        append_images=images[1:],
+                        duration=duration,  # Set the duration between frames (in milliseconds)
+                        # fps=fps,
+                        loop=0,
+                        disposal=2,
+                        background=255)
+
+                self.statusbar.update_progressbar(end_frame)
             else:
                 print("WARNING: export_as_gif: Image sequence not provided.")
         except Exception as err:
@@ -227,7 +251,13 @@ class ImportExporter:
                 video = VideoFileClip(video_path)
                 frames = video.iter_frames()
 
+                duration = video.duration
+                fps = video.fps
+                frame_count = int(duration * fps)
+                self.statusbar.set_progress_maximum(frame_count)
+
                 for i, frame in enumerate(frames):
+                    self.statusbar.update_progressbar(i)
                     image = Image.fromarray(frame)
                     file_name = f"{output_dir}/{i}.png"
                     image.save(file_name)
@@ -237,7 +267,7 @@ class ImportExporter:
 
             return self.image_sequence
         except Exception as err:
-            self.console.append_text("ERROR: export_as_gif: {}".format(err.args))
+            self.console.append_text("ERROR: import_as_mp4: {}".format(err.args))
 
     def export_as_mp4(self, image_sequence: list) -> None:
         """
@@ -245,6 +275,7 @@ class ImportExporter:
         """
         try:
             if image_sequence:
+                self.statusbar.set_progress_maximum(len(image_sequence))
                 fps = self.control.get_fps_value()
                 codec = "mp4v"
                 filename = "Movie_000.mp4"
@@ -260,7 +291,8 @@ class ImportExporter:
 
                     video_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*codec), fps, (width, height))
 
-                    for image_path in image_sequence:
+                    for index, image_path in image_sequence:
+                        self.statusbar.update_progressbar(index)
                         frame = cv2.imread(image_path)
                         video_writer.write(frame)
 
@@ -276,6 +308,7 @@ class ImportExporter:
         """
         try:
             if image_sequence:
+                self.statusbar.set_progress_maximum(len(image_sequence))
                 fps = self.control.get_fps_value()
                 codec = "libvpx-vp9"
                 filename = "Webm_000.webm"  # Change the filename extension to .webm
@@ -291,6 +324,7 @@ class ImportExporter:
                     # Copy the image_sequence to the temporary directory
                     for i, image_path in enumerate(image_sequence):
                         shutil.copy(image_path, os.path.join(temp_dir, f"frame_{i:04d}.png"))
+                        self.statusbar.update_progressbar(i)
 
                     # Create an ImageSequenceClip from the images in the temporary directory
                     image_sequence_clip = ImageSequenceClip(temp_dir, fps=fps)
@@ -309,6 +343,7 @@ class ImportExporter:
         Saves the script to the specified directory.
         """
         try:
+            self.statusbar.set_progress_maximum(100)
             if script:
                 filename = "{}_Animation_Script.txt".format(name)
                 save_path, _ = QFileDialog.getSaveFileName(
@@ -318,6 +353,8 @@ class ImportExporter:
                 if save_path:
                     with open(save_path, "w") as file:
                         file.write(script)
+
+            self.statusbar.update_progressbar(75)
 
         except Exception as err:
             self.console.append_text("ERROR: save_lsl_script_1_file: {}".format(err.args))

@@ -55,12 +55,12 @@ class MainWindow(QMainWindow):
         self.exit_signal.exit_signal.connect(self.exit_application)
 
         # Set the application version number
-        self.version_number = "v1.0.4"
+        self.version_number = "v1.0.5"
 
         # Set window title
         self.image_sequence = []
         self.setWindowTitle("Super Sprite {}".format(self.version_number))
-        self.resize(1200, 800)
+        self.resize(1200, 1000)
 
         # Define main window and docked widget style sheets
         self.setStyleSheet(style_sheet.dock_widget_style())
@@ -71,8 +71,8 @@ class MainWindow(QMainWindow):
                             QMainWindow.AllowNestedDocks)
 
         # Set up the status bar
-        self.statusBar = StatusBar()
-        self.setStatusBar(self.statusBar)
+        self.statusbar = StatusBar()
+        self.setStatusBar(self.statusbar)
 
         # Define the console first so we can print out messages to it while loading other widgets.
         self.main_console_widget = ConsoleWidget()
@@ -120,15 +120,15 @@ class MainWindow(QMainWindow):
         self.sprite_sheet_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         self.sprite_sheet_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
-        self.playback_widget = PlaybackWidget(self.main_console_widget, self.control_widget, self.statusBar)
+        self.playback_widget = PlaybackWidget(self.main_console_widget, self.control_widget, self.statusbar)
         self.playback_widget_dock_widget = QDockWidget("Playback")
         self.playback_widget_dock_widget.setWidget(self.playback_widget)
         self.playback_widget_dock_widget.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         self.playback_widget_dock_widget.setStyleSheet(style_sheet.dock_widget_style())
 
         # Add the import/export and converter functions
-        self.import_export = ImportExporter(self.main_console_widget, self.control_widget)
-        self.direct_converter = DirectConverter(self.main_console_widget)
+        self.import_export = ImportExporter(self.main_console_widget, self.control_widget,self.statusbar)
+        self.direct_converter = DirectConverter(self.main_console_widget,self.control_widget, self.statusbar)
 
         # Set up the menu bar
         self.menu_bar = MenuBar(self.main_console_widget)
@@ -277,6 +277,7 @@ class MainWindow(QMainWindow):
         This method imports an image sequence using the ImportExporter class.
         The widgets in the application are then populated with the images.
         """
+        self.statusbar.progressbar_visibility(True)
         self.image_sequence = []
 
         if file_type == "seq":
@@ -294,6 +295,8 @@ class MainWindow(QMainWindow):
 
     def export_sequence(self, file_type: str) -> None:
         """Exports the image sequence to a selected format."""
+
+        self.statusbar.progressbar_visibility(True)
         if file_type == "seq":
             self.import_export.export_image_sequence(self.image_sequence)
         elif file_type == "mp4":
@@ -306,12 +309,16 @@ class MainWindow(QMainWindow):
             sprite_sheet = self.sprite_sheet_widget.get_generated_sprite_sheet()
             self.import_export.export_sprite_sheet(sprite_sheet)
 
+        self.statusbar.update_progressbar(0)
+        self.statusbar.progressbar_visibility(False)
+
     def convert_type(self, file_type: str) -> None:
         """
         Converts files from one type to another.
         Args:
             file_type (str): The file type to handle.
         """
+        self.statusbar.progressbar_visibility(True)
         if file_type == "image":
             self.direct_converter.convert_image()
         elif file_type == "seq":
@@ -325,12 +332,17 @@ class MainWindow(QMainWindow):
         elif file_type == "icon":
             self.direct_converter.convert_icon()
 
+        self.statusbar.update_progressbar(0)
+        self.statusbar.progressbar_visibility(False)
+
     def provide_script(self, script_type: str) -> None:
         """
         Provides the user with the selected script type.
         Args:
             script_type (str): The type of script to provide to the user.
         """
+        self.statusbar.progressbar_visibility(True)
+
         scripts = ScriptGenerator()
         if script_type == "LSL":
             self.import_export.save_script(script_type, scripts.generate_lsl_script_option_1())
@@ -343,6 +355,9 @@ class MainWindow(QMainWindow):
         elif script_type == "PyGame":
             self.import_export.save_script(script_type, scripts.generate_pygame_script())
 
+        self.statusbar.update_progressbar(0)
+        self.statusbar.progressbar_visibility(False)
+
     def populate_image_sequence(self, sequence) -> None:
         """
         Populates all the widgets with the image sequence.
@@ -352,21 +367,16 @@ class MainWindow(QMainWindow):
         """
         try:
             if sequence:
-                self.statusBar.set_total_frame_text(str(len(sequence)))
 
-                self.main_console_widget.append_text("INFO: Image Sequence Loaded.")
-
+                self.statusbar.progressbar_visibility(True)
+                self.statusbar.set_total_frame_text(str(len(sequence)))
                 self.image_sequence_widget.load_sequence(sequence)
-                self.main_console_widget.append_text("INFO: Image sequence set on Image Sequence Widget.")
-
                 self.image_viewer_widget.load_image(sequence, 0)
-                self.main_console_widget.append_text("INFO: Image set on Image Viewer Widget")
-
                 self.playback_widget.load_image_sequence(sequence)
-                self.main_console_widget.append_text("INFO: Image sequence set on Playback Widget.")
-
                 self.sprite_sheet_widget.load_images(sequence)
-                self.main_console_widget.append_text("INFO: Image sequence set on Sprite Sheet Widget.")
+
+                self.statusbar.update_progressbar(0)
+                self.statusbar.progressbar_visibility(False)
             else:
                 self.main_console_widget.append_text("WARNING: populate_image_sequence: Nothing selected.")
         except Exception as err:
@@ -393,7 +403,7 @@ class MainWindow(QMainWindow):
             memory_usage_readable = psutil._common.bytes2human(memory_usage)
 
             # Display memory usage
-            self.statusBar.set_mem_usage_text(str(memory_usage_readable))
+            self.statusbar.set_mem_usage_text(str(memory_usage_readable))
         except Exception as err:
             self.main_console_widget.append_text("ERROR: get_memory_usage: {}".format(err.args))
 
