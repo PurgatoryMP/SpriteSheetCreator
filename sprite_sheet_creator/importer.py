@@ -47,6 +47,7 @@ class ImportExporter:
             # Open file dialog to select directory
             directory = QFileDialog.getExistingDirectory(caption="Select Sequence Directory.")
             if directory:
+                # TODO: consider an option to choose which order to import them in rather than by creation time.
                 # Retrieve image files from the selected directory and sort them by creation time.
                 # This keeps the frames in the correct order regardless of name.
                 self.image_sequence = sorted([str(os.path.join(directory, filename)).replace("\\", "/") for filename in os.listdir(directory)], key=os.path.getctime)
@@ -251,11 +252,13 @@ class ImportExporter:
                 video = VideoFileClip(video_path)
                 frames = video.iter_frames()
 
+                # Get the number of frames in the video
                 duration = video.duration
                 fps = video.fps
                 frame_count = int(duration * fps)
                 self.statusbar.set_progress_maximum(frame_count)
 
+                # save out each frame, so we can use them as a sequence.
                 for i, frame in enumerate(frames):
                     self.statusbar.update_progressbar(i)
                     image = Image.fromarray(frame)
@@ -357,4 +360,4 @@ class ImportExporter:
             self.statusbar.update_progressbar(75)
 
         except Exception as err:
-            self.console.append_text("ERROR: save_lsl_script_1_file: {}".format(err.args))
+            self.console.append_text("ERROR: save_script: {}".format(err.args))

@@ -41,7 +41,7 @@ class StatusBar(QStatusBar):
         """Toggles the visibility state of the progress bar.
 
         Args:
-            value (bool): TRUE or FALSE
+            value (bool): True or False
         """
         self.progress_bar.setVisible(value)
 

@@ -430,7 +430,9 @@ class MainWindow(QMainWindow):
         Exit the application gracefully.
         This method is called when the application is exiting.
         """
+        # Remove the temp directory for this tool.
         self.import_export.clean_up_temp_directory()
+        # End this process
         self.close()
 
 
