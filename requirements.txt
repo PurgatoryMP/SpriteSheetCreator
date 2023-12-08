@@ -1,0 +1,6 @@
+Pillow
+PyQT5
+psutil
+pyperclip
+moviepy
+opencv-python-headless

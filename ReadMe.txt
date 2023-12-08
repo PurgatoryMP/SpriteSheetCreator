@@ -17,3 +17,17 @@ This will generate a main.exe file in the dist directory.
 
 Nothing here yet.
 Need to add testing documentation.
+
+
+
+Notes for building.
+
+got it to run by installing these:
+
+$ cat requirements.txt
+Pillow
+PyQT5
+psutil
+pyperclip
+moviepy
+opencv-python-headless
