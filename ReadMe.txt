@@ -21,6 +21,7 @@ Need to add testing documentation.
 
 
 Notes for building.
+I've included a requirements.txt file. Cat command may or may not be necessary.
 
 got it to run by installing these:
 
