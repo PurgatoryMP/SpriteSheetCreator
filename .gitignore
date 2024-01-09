@@ -16,6 +16,7 @@ __pycache__/
 venv/
 dist/
 build/
+test_files/
 
 # Windows junk
 *Thumbs.db
